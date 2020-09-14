@@ -1,19 +1,25 @@
 import {TokenType} from "./TokenType";
 import {Token} from "./Token";
-import {isAlpha, isDigital} from "./Utils";
+import {isAlpha, isBlank, isDigital} from "./Utils";
 
 enum DfaState {
     Initial,
     Identifier,
     GT,
     GE,
-    IntLiteral
+    IntLiteral,
+    Assignment,
+
+    Int1,
+    Int2,
+    Int3,
+    Int
 }
 
 
 class SimpleToken implements Token {
     text = '';
-    type :TokenType;
+    type: TokenType;
 }
 
 export class SimpleLexer {
@@ -21,14 +27,16 @@ export class SimpleLexer {
     private token = new SimpleToken();
     private tokens: SimpleToken[] = [];
 
-    constructor() {}
+    constructor() {
+    }
 
-    public tokenize(script :string) {
+    public tokenize(script: string) {
         let state = DfaState.Initial;
         for (let ch of script) {
             switch (state) {
                 case DfaState.Initial:
                 case DfaState.GE:
+                case DfaState.Assignment:
                     // 刚开始解析或者解析完成，是下一个 token 的开始
                     state = this.initToken(ch);
                     break;
@@ -44,11 +52,11 @@ export class SimpleLexer {
                     break;
                 case DfaState.GT:
                     // 大于号
-                    if (ch === '='){
+                    if (ch === '=') {
                         this.tokenText += ch;
                         this.token.type = TokenType.GE;
                         state = DfaState.GE;
-                    }else {
+                    } else {
                         state = this.initToken(ch);
                     }
                     break;
@@ -61,13 +69,49 @@ export class SimpleLexer {
                         state = this.initToken(ch);
                     }
                     break;
+                case DfaState.Int1:
+                    // 大于号
+                    if (ch === 'n') {
+                        this.tokenText += ch;
+                        state = DfaState.Int2;
+                    } else if (isDigital(ch) || isAlpha(ch)) {
+                        // 如果是数字或者字母，会进入标识符状态
+                        state = DfaState.Identifier;
+                        this.tokenText += ch;
+                    } else {
+                        state = this.initToken(ch);
+                    }
+                    break;
+                case DfaState.Int2:
+                    // 大于号
+                    if (ch === 't') {
+                        this.tokenText += ch;
+                        state = DfaState.Int3;
+                    } else if (isDigital(ch) || isAlpha(ch)) {
+                        // 如果是数字或者字母，会进入标识符状态
+                        state = DfaState.Identifier;
+                        this.tokenText += ch;
+                    } else {
+                        state = this.initToken(ch);
+                    }
+                    break;
+                case DfaState.Int3:
+                    if (isBlank(ch)) {
+                        this.token.type = TokenType.Int;
+                        state = this.initToken(ch)
+                    } else {
+                        // 进入标识符状态
+                        state = DfaState.Identifier;
+                        this.tokenText += ch;
+                    }
+                    break;
                 default:
                     break;
             }
         }
         // 把最后一个token送进去
         if (this.tokenText.length > 0) {
-            this.initToken(script[script.length-1]);
+            this.initToken(script[script.length - 1]);
         }
 
         return this.tokens.concat([]);
@@ -86,9 +130,16 @@ export class SimpleLexer {
 
         if (isAlpha(ch)) {
             // 第一个是字母，进入标识符状态
-            newState = DfaState.Identifier;
-            this.token.type = TokenType.Identifier;
-            this.tokenText += ch;
+            if (ch === 'i') {
+                // 第一个是 i，可能是 int 关键字， 也可能是标识符
+                newState = DfaState.Int1;
+                this.token.type = TokenType.Identifier;
+                this.tokenText += ch;
+            } else {
+                newState = DfaState.Identifier;
+                this.token.type = TokenType.Identifier;
+                this.tokenText += ch;
+            }
         } else if (isDigital(ch)) {
             // 第一个是数字, 进入整型字面量状态
             newState = DfaState.IntLiteral;
@@ -99,8 +150,15 @@ export class SimpleLexer {
             newState = DfaState.GT;
             this.token.type = TokenType.GT;
             this.tokenText += ch;
+        } else if (ch === '=') {
+            // 第一个是 等于
+            newState = DfaState.Assignment;
+            this.token.type = TokenType.Assignment;
+            this.tokenText += ch;
         }
 
         return newState;
     }
 }
+
+console.log(JSON.stringify(new SimpleLexer().tokenize('intA age = 40')) );

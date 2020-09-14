@@ -5,3 +5,7 @@ export  function isDigital(ch: string) {
 export  function isAlpha(ch: string) {
     return ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z';
 }
+
+export  function isBlank(ch: string) {
+    return ch === ' ';
+}

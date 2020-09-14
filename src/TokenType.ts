@@ -3,4 +3,7 @@ export enum TokenType {
     IntLiteral = 'IntLiteral', // 整数字面量
     GT = 'GT', // 大于
     GE = 'GE', // 大于等于
+
+    Int = 'Int',
+    Assignment = 'Assignment'
 }
