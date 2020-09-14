@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
-    "target": "esnext"
+    "lib": ["es2018"],
+    "module": "commonjs",
+    "target": "es2018",
+    "esModuleInterop": true
   }
 }
