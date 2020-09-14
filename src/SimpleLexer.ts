@@ -10,6 +10,11 @@ enum DfaState {
     IntLiteral,
     Assignment,
 
+    Plus,
+    Minus,
+    Star,
+    Slash,
+
     Int1,
     Int2,
     Int3,
@@ -37,6 +42,10 @@ export class SimpleLexer {
                 case DfaState.Initial:
                 case DfaState.GE:
                 case DfaState.Assignment:
+                case DfaState.Plus:
+                case DfaState.Minus:
+                case DfaState.Star:
+                case DfaState.Slash:
                     // 刚开始解析或者解析完成，是下一个 token 的开始
                     state = this.initToken(ch);
                     break;
@@ -155,10 +164,30 @@ export class SimpleLexer {
             newState = DfaState.Assignment;
             this.token.type = TokenType.Assignment;
             this.tokenText += ch;
+        } else if (ch === '+') {
+            // 第一个是 等于
+            newState = DfaState.Plus;
+            this.token.type = TokenType.Plus;
+            this.tokenText += ch;
+        }else if (ch === '-') {
+            // 第一个是 等于
+            newState = DfaState.Minus;
+            this.token.type = TokenType.Minus;
+            this.tokenText += ch;
+        }else if (ch === '*') {
+            // 第一个是 等于
+            newState = DfaState.Star;
+            this.token.type = TokenType.Star;
+            this.tokenText += ch;
+        }else if (ch === '/') {
+            // 第一个是 等于
+            newState = DfaState.Slash;
+            this.token.type = TokenType.Slash;
+            this.tokenText += ch;
         }
 
         return newState;
     }
 }
 
-console.log(JSON.stringify(new SimpleLexer().tokenize('intA age = 40')) );
+// console.log(JSON.stringify(new SimpleLexer().tokenize('2+3*5')) );

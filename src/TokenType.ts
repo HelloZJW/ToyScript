@@ -5,5 +5,9 @@ export enum TokenType {
     GE = 'GE', // 大于等于
 
     Int = 'Int',
-    Assignment = 'Assignment'
+    Assignment = 'Assignment',
+    Plus ='Plus',
+    Minus = 'Minus',
+    Star = 'Star',
+    Slash = 'Slash',
 }

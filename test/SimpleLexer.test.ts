@@ -16,7 +16,7 @@ let script2 = 'int age = 40';
 test(script2, () => {
     let expected = JSON.stringify([{"text": "int", "type": "Int"}, {"text": "age", "type": "Identifier"}, {
         "text": "=",
-        "type": "="
+        "type": "Assignment"
     }, {"text": "40", "type": "IntLiteral"}]);
     expect(JSON.stringify(new SimpleLexer().tokenize(script2))).toBe(expected);
 });
@@ -27,6 +27,18 @@ test(script3, () => {
     let expected = JSON.stringify([{"text": "intA", "type": "Identifier"}, {
         "text": "age",
         "type": "Identifier"
-    }, {"text": "=", "type": "="}, {"text": "40", "type": "IntLiteral"}]);
+    }, {"text": "=", "type": "Assignment"}, {"text": "40", "type": "IntLiteral"}]);
     expect(JSON.stringify(new SimpleLexer().tokenize(script3))).toBe(expected);
 });
+
+
+let script4 = '2+3*5';
+test(script4, () => {
+    let expected = JSON.stringify([{"text": "2", "type": "IntLiteral"}, {"text": "+", "type": "Plus"}, {
+        "text": "3",
+        "type": "IntLiteral"
+    }, {"text": "*", "type": "Star"}, {"text": "5", "type": "IntLiteral"}]);
+    expect(JSON.stringify(new SimpleLexer().tokenize(script4))).toBe(expected);
+});
+
+
