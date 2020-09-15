@@ -22,7 +22,7 @@ enum DfaState {
 }
 
 
-class SimpleToken implements Token {
+export class SimpleToken implements Token {
     text = '';
     type: TokenType;
 }
