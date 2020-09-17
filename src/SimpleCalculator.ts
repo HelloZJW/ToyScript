@@ -4,6 +4,9 @@ import {TokenType} from "./TokenType";
 enum ASTNodeType {
     IntDeclaration = 'IntDeclaration',
     AssignmentExp = 'AssignmentExp',
+    Additive = 'Additive',
+    Multiplicative = 'Multiplicative',
+    IntLiteral = 'IntLiteral'
 }
 
 class SimpleASTNode {
@@ -63,13 +66,80 @@ class SimpleCalculator {
         }
     }
 
+// 产生式：左递归问题，死循环
+// additiveExpression
+//     :   multiplicativeExpression
+// |   additiveExpression Plus multiplicativeExpression
+// ;
+//
+
+// 产生式：交换位置，不会死循环，但是会有优先级问题
+// additiveExpression
+//     :   multiplicativeExpression
+// |   multiplicativeExpression Plus additiveExpression
+// ;
     additive(tokens: SimpleToken[]): SimpleASTNode {
-        console.log(tokens);
-        let node: SimpleASTNode;
-        node = new SimpleASTNode(ASTNodeType.IntDeclaration, 'ssss');
+        let child1 = this.multiplicative(tokens);  // 计算第一个子节点
+        let node = child1;
+        let token = tokens[0];
+        if (child1 != null && token != null){
+            if (token.type === TokenType.Plus || token.type === TokenType.Minus){
+                token = tokens.shift();
+                // 加法表达式
+                let child2 = this.additive(tokens);
+                if(child2 != null){
+                    node = new SimpleASTNode(ASTNodeType.Additive, token.text);
+                    node.children.push(child1);
+                    node.children.push(child2);
+                }else {
+                    throw new Error("invalid additive expression, expecting the right part.");
+                }
+            }
+        }
+
         return node
+    }
+
+// multiplicativeExpression
+//     :   IntLiteral
+// |   multiplicativeExpression Star IntLiteral
+// ;
+    multiplicative(tokens: SimpleToken[]){
+        let child1: SimpleASTNode = null;
+        let token = tokens[0];
+        if (token != null){
+            if (token.type === TokenType.IntLiteral){
+                token = tokens.shift();
+                child1 = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
+            }
+        }
+
+        let node = child1;
+
+        token = tokens[0];
+        // node 为空 代表没有匹配 IntLiteral
+        if (child1 != null && token != null){
+            if (token.type === TokenType.Star || token.type === TokenType.Slash){
+                token = tokens.shift();
+                let child2 = this.multiplicative(tokens);
+                if (child2 != null){
+                    node = new SimpleASTNode(ASTNodeType.Multiplicative, token.text);
+                    node.children.push(child1);
+                    node.children.push(child2);
+                }else {
+                    throw new Error("invalid multiplicative expression, expecting the right part.");
+                }
+            }
+        }
+
+        return node;
     }
 }
 
+// new SimpleCalculator().IntDeclare();
 
-new SimpleCalculator().IntDeclare();
+let lexer = new SimpleLexer();
+let tokens = lexer.tokenize('2+3*5');
+
+let node = new SimpleCalculator().additive(tokens.concat());
+console.log(node);
