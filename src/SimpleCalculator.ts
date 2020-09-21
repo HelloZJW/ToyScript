@@ -67,12 +67,22 @@ class SimpleCalculator {
         }
     }
 
+    /**
+     * 计算入口
+     * @param script 源码
+     */
     evaluate(script: string) {
         let rootNode = this.parse(script);
         this.dumpAST(rootNode, '');
         this.evaluateHelper(rootNode, '');
     }
 
+    /**
+     * 计算实际的执行函数
+     * 根据 AST 四则运算的结果
+     * @param node
+     * @param indent
+     */
     private evaluateHelper(node: SimpleASTNode, indent: string) {
         let result = 0;
         console.log(indent + "Calculating: " + node.type);
@@ -118,14 +128,22 @@ class SimpleCalculator {
         return result;
     }
 
-    parse(script: string) {
+    /**
+     * 将脚本解析为 tokens， 并把 tokens 解析为 AST
+     * @param script
+     */
+    parse(script: string): SimpleASTNode {
         let lexer = new SimpleLexer();
         let tokens = lexer.tokenize(script);
 
         return this.prog(tokens);
     }
 
-    prog(tokens: SimpleToken[]) {
+    /**
+     * 构建程序 AST
+     * @param tokens
+     */
+    prog(tokens: SimpleToken[]): SimpleASTNode {
         let node = new SimpleASTNode(ASTNodeType.Program, 'Calculator');
         let child = this.additive(tokens);
         if (child) node.children.push(child);
@@ -135,22 +153,31 @@ class SimpleCalculator {
 
 // 产生式：左递归问题，死循环
 // additiveExpression
-//     :   multiplicativeExpression
+// :   multiplicativeExpression
 // |   additiveExpression Plus multiplicativeExpression
 // ;
 //
 
 // 产生式：交换位置，不会死循环，但是会有优先级问题
 // additiveExpression
-//     :   multiplicativeExpression
+// :   multiplicativeExpression
 // |   multiplicativeExpression Plus additiveExpression
 // ;
+
+    /**
+     * 匹配 additiveExpression
+     * @param tokens
+     */
     additive(tokens: SimpleToken[]): SimpleASTNode {
+        // 匹配 multiplicativeExpression
         let child1 = this.multiplicative(tokens);  // 计算第一个子节点
         let node = child1;
         let token = tokens[0];
+
         if (child1 != null && token != null) {
+            // 如果表达式没有结束，并且 下一个 Token 是加/减法法，匹配嵌套的 additiveExpression
             if (token.type === TokenType.Plus || token.type === TokenType.Minus) {
+                // 处理 multiplicativeExpression Plus additiveExpression 产生式
                 token = tokens.shift();
                 // 加法表达式
                 let child2 = this.additive(tokens);
@@ -167,13 +194,26 @@ class SimpleCalculator {
         return node
     }
 
+// 左递归问题
 // multiplicativeExpression
-//     :   IntLiteral
+// :   IntLiteral
 // |   multiplicativeExpression Star IntLiteral
 // ;
+
+// 交换位置，防止左递归的问题
+// multiplicativeExpression
+// :   IntLiteral
+// |   IntLiteral Star multiplicativeExpression
+// ;
+
+    /**
+     * 匹配 multiplicativeExpression
+     * @param tokens
+     */
     multiplicative(tokens: SimpleToken[]) {
         let child1: SimpleASTNode = null;
         let token = tokens[0];
+        // 匹配 IntLiteral
         if (token != null) {
             if (token.type === TokenType.IntLiteral) {
                 token = tokens.shift();
@@ -186,6 +226,7 @@ class SimpleCalculator {
         token = tokens[0];
         // node 为空 代表没有匹配 IntLiteral
         if (child1 != null && token != null) {
+            // 匹配是否有嵌套的 multiplicativeExpression
             if (token.type === TokenType.Star || token.type === TokenType.Slash) {
                 token = tokens.shift();
                 let child2 = this.multiplicative(tokens);
@@ -202,7 +243,11 @@ class SimpleCalculator {
         return node;
     }
 
-
+    /**
+     * 格式化打印树形 Node
+     * @param node
+     * @param indent
+     */
     private dumpAST(node: SimpleASTNode, indent: string) {
         console.log(indent + node.type + " " + node.value);
         for (let child of node.children) {
@@ -213,4 +258,4 @@ class SimpleCalculator {
 
 
 let calculator = new SimpleCalculator();
-calculator.evaluate('2+3*5');
+calculator.evaluate('2+3+4');
