@@ -2,6 +2,7 @@ import {SimpleLexer, SimpleToken} from "./SimpleLexer";
 import {TokenType} from "./TokenType";
 
 enum ASTNodeType {
+    Program = 'Program',
     IntDeclaration = 'IntDeclaration',
     AssignmentExp = 'AssignmentExp',
     Additive = 'Additive',
@@ -53,9 +54,9 @@ class SimpleCalculator {
             if (token && token.type === TokenType.Assignment) {
                 tokens.shift(); // 消耗掉 =
                 let child = this.additive(tokens); //匹配一个表达式
-                if (!child){
+                if (!child) {
                     throw new Error('变量初始化失败，需要一个表达式');
-                }else {
+                } else {
                     node.children.push(child);
                     console.log(node);
                 }
@@ -64,6 +65,72 @@ class SimpleCalculator {
         } else {
             throw new Error('变量名 expected')
         }
+    }
+
+    evaluate(script: string) {
+        let rootNode = this.parse(script);
+        this.dumpAST(rootNode, '');
+        this.evaluateHelper(rootNode, '');
+    }
+
+    private evaluateHelper(node: SimpleASTNode, indent: string) {
+        let result = 0;
+        console.log(indent + "Calculating: " + node.type);
+        switch (node.type) {
+            case ASTNodeType.Program:
+                for (let child in node.children) {
+                    result = this.evaluateHelper(node.children[0], indent + '\t')
+                }
+                break;
+            case ASTNodeType.Additive: {
+                let child1 = node.children[0];
+                let child2 = node.children[1];
+                let value1 = this.evaluateHelper(child1, indent + '\t');
+                let value2 = this.evaluateHelper(child2, indent + '\t');
+
+                if (node.value === '+') {
+                    result = value1 + value2;
+                } else {
+                    result = value1 - value2;
+                }
+                break;
+            }
+            case ASTNodeType.Multiplicative: {
+                let child1 = node.children[0];
+                let child2 = node.children[1];
+                let value1 = this.evaluateHelper(child1, indent + '\t');
+                let value2 = this.evaluateHelper(child2, indent + '\t');
+
+                if (node.value === '*') {
+                    result = value1 * value2;
+                } else {
+                    result = value1 / value2;
+                }
+                break;
+            }
+
+            case ASTNodeType.IntLiteral:
+                result = Number(node.value);
+                break;
+        }
+
+        console.log(indent + 'Result:' + result);
+        return result;
+    }
+
+    parse(script: string) {
+        let lexer = new SimpleLexer();
+        let tokens = lexer.tokenize(script);
+
+        return this.prog(tokens);
+    }
+
+    prog(tokens: SimpleToken[]) {
+        let node = new SimpleASTNode(ASTNodeType.Program, 'Calculator');
+        let child = this.additive(tokens);
+        if (child) node.children.push(child);
+
+        return node;
     }
 
 // 产生式：左递归问题，死循环
@@ -82,16 +149,16 @@ class SimpleCalculator {
         let child1 = this.multiplicative(tokens);  // 计算第一个子节点
         let node = child1;
         let token = tokens[0];
-        if (child1 != null && token != null){
-            if (token.type === TokenType.Plus || token.type === TokenType.Minus){
+        if (child1 != null && token != null) {
+            if (token.type === TokenType.Plus || token.type === TokenType.Minus) {
                 token = tokens.shift();
                 // 加法表达式
                 let child2 = this.additive(tokens);
-                if(child2 != null){
+                if (child2 != null) {
                     node = new SimpleASTNode(ASTNodeType.Additive, token.text);
                     node.children.push(child1);
                     node.children.push(child2);
-                }else {
+                } else {
                     throw new Error("invalid additive expression, expecting the right part.");
                 }
             }
@@ -104,11 +171,11 @@ class SimpleCalculator {
 //     :   IntLiteral
 // |   multiplicativeExpression Star IntLiteral
 // ;
-    multiplicative(tokens: SimpleToken[]){
+    multiplicative(tokens: SimpleToken[]) {
         let child1: SimpleASTNode = null;
         let token = tokens[0];
-        if (token != null){
-            if (token.type === TokenType.IntLiteral){
+        if (token != null) {
+            if (token.type === TokenType.IntLiteral) {
                 token = tokens.shift();
                 child1 = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
             }
@@ -118,15 +185,15 @@ class SimpleCalculator {
 
         token = tokens[0];
         // node 为空 代表没有匹配 IntLiteral
-        if (child1 != null && token != null){
-            if (token.type === TokenType.Star || token.type === TokenType.Slash){
+        if (child1 != null && token != null) {
+            if (token.type === TokenType.Star || token.type === TokenType.Slash) {
                 token = tokens.shift();
                 let child2 = this.multiplicative(tokens);
-                if (child2 != null){
+                if (child2 != null) {
                     node = new SimpleASTNode(ASTNodeType.Multiplicative, token.text);
                     node.children.push(child1);
                     node.children.push(child2);
-                }else {
+                } else {
                     throw new Error("invalid multiplicative expression, expecting the right part.");
                 }
             }
@@ -134,12 +201,16 @@ class SimpleCalculator {
 
         return node;
     }
+
+
+    private dumpAST(node: SimpleASTNode, indent: string) {
+        console.log(indent + node.type + " " + node.value);
+        for (let child of node.children) {
+            this.dumpAST(child, indent + "\t");
+        }
+    }
 }
 
-// new SimpleCalculator().IntDeclare();
 
-let lexer = new SimpleLexer();
-let tokens = lexer.tokenize('2+3*5');
-
-let node = new SimpleCalculator().additive(tokens.concat());
-console.log(node);
+let calculator = new SimpleCalculator();
+calculator.evaluate('2+3*5');
