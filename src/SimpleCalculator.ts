@@ -172,21 +172,36 @@ class SimpleCalculator {
         // 匹配 multiplicativeExpression
         let child1 = this.multiplicative(tokens);  // 计算第一个子节点
         let node = child1;
-        let token = tokens[0];
+        // let token = tokens[0];
+        // if (child1 != null && token != null) {
+        //     // 如果表达式没有结束，并且 下一个 Token 是加/减法法，匹配嵌套的 additiveExpression
+        //     if (token.type === TokenType.Plus || token.type === TokenType.Minus) {
+        //         // 处理 multiplicativeExpression Plus additiveExpression 产生式
+        //         token = tokens.shift();
+        //         // 加法表达式
+        //         let child2 = this.additive(tokens);
+        //         if (child2 != null) {
+        //             node = new SimpleASTNode(ASTNodeType.Additive, token.text);
+        //             node.children.push(child1);
+        //             node.children.push(child2);
+        //         } else {
+        //             throw new Error("invalid additive expression, expecting the right part.");
+        //         }
+        //     }
+        // }
 
-        if (child1 != null && token != null) {
-            // 如果表达式没有结束，并且 下一个 Token 是加/减法法，匹配嵌套的 additiveExpression
-            if (token.type === TokenType.Plus || token.type === TokenType.Minus) {
-                // 处理 multiplicativeExpression Plus additiveExpression 产生式
-                token = tokens.shift();
-                // 加法表达式
-                let child2 = this.additive(tokens);
-                if (child2 != null) {
-                    node = new SimpleASTNode(ASTNodeType.Additive, token.text);
+        if (child1 != null){
+            while(true){
+                let token = tokens[0];
+                if (token != null && (token.type == TokenType.Plus || token.type == TokenType.Minus)){
+                    token = tokens.shift();
+                    let child2 = this.multiplicative(tokens);
+                    node = new SimpleASTNode(ASTNodeType.Additive, token?.text);
                     node.children.push(child1);
                     node.children.push(child2);
-                } else {
-                    throw new Error("invalid additive expression, expecting the right part.");
+                    child1 = node;
+                }else {
+                    break;
                 }
             }
         }
