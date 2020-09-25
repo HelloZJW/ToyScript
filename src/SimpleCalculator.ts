@@ -4,10 +4,11 @@ import {TokenType} from "./TokenType";
 enum ASTNodeType {
     Program = 'Program',
     IntDeclaration = 'IntDeclaration',
+    Identifier = 'Identifier',
     AssignmentExp = 'AssignmentExp',
     Additive = 'Additive',
     Multiplicative = 'Multiplicative',
-    IntLiteral = 'IntLiteral'
+    IntLiteral = 'IntLiteral',
 }
 
 class SimpleASTNode {
@@ -158,7 +159,7 @@ class SimpleCalculator {
 // ;
 //
 
-// 产生式：交换位置，不会死循环，但是会有优先级问题
+// 产生式：交换位置，不会死循环，但是会有结合性问题
 // additiveExpression
 // :   multiplicativeExpression
 // |   multiplicativeExpression Plus additiveExpression
@@ -215,7 +216,7 @@ class SimpleCalculator {
 // |   multiplicativeExpression Star IntLiteral
 // ;
 
-// 交换位置，防止左递归的问题
+// 交换位置，防止左递归的问题。
 // multiplicativeExpression
 // :   IntLiteral
 // |   IntLiteral Star multiplicativeExpression
@@ -259,6 +260,40 @@ class SimpleCalculator {
     }
 
     /**
+     * 基础表达式的定义，变量、字面量、或者在括号内的表达式，提升括号中的表达式的优先级
+     * primaryExpression : Identifier | IntLiteral | '(' additiveExpression ')';
+     */
+    primary(tokens: SimpleToken[]){
+        let node;
+        let token = tokens[0];
+        if (token != null){
+            if (token.type === TokenType.Identifier){
+                token = tokens.shift();
+                node = new SimpleASTNode(ASTNodeType.Identifier, token.text);
+            }else if (token.type === TokenType.IntLiteral) {
+                token = tokens.shift();
+                node = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
+            }else if (token.type === TokenType.LeftParentheses){
+                tokens.shift();
+                node = this.additive(tokens);
+                if (node != null){
+                    token = token[0];
+                    if (token != null && token.type === TokenType.RightParenthese ){
+                        tokens.shift();
+                    }else {
+                        throw new Error("expecting right parentheses");
+                    }
+                }else {
+                    throw new Error("expecting an additive expression inside parentheses");
+                }
+            }
+        }
+
+        return node;
+    }
+
+
+    /**
      * 格式化打印树形 Node
      * @param node
      * @param indent
@@ -273,4 +308,4 @@ class SimpleCalculator {
 
 
 let calculator = new SimpleCalculator();
-calculator.evaluate('2+3+4');
+calculator.evaluate('2+3*5');
