@@ -28,45 +28,37 @@ class SimpleCalculator {
     }
 
     /**
-     *
      * 产生式：intDeclaration : Int Identifier ('=' additiveExpression)?;
-     //伪代码
-     MatchIntDeclare(){
-            MatchToken(Int)；        //匹配Int关键字
-            MatchIdentifier();       //匹配标识符
-            MatchToken(equal);       //匹配等号
-            MatchExpression();       //匹配表达式
-        }
-     * @constructor
+     * 整型变量声明，如：
+     * int a;
+     * int b = 2*3;
      */
-    IntDeclare() {
-        let lexer = new SimpleLexer();
-        let tokens = lexer.tokenize('int age = 45');
+    intDeclare(tokens: TokenReader) {
+        let node: SimpleASTNode;
         let token = tokens.peek();
-        if (token.type !== TokenType.Int) {
-            throw new Error('第一个 token 必须是 Int 关键字')
-        }
-
-        tokens.read(); // 消耗掉 Int
-        token = tokens.peek();
-        if (token.type === TokenType.Identifier) {
-            token = tokens.read();
-            let node = new SimpleASTNode(ASTNodeType.IntDeclaration, token.text);
+        if (token != null && token.type == TokenType.Int) {
+            tokens.read(); // 消耗掉 Int
             token = tokens.peek();
-            if (token && token.type === TokenType.Assignment) {
-                tokens.read(); // 消耗掉 =
-                let child = this.additive(tokens); //匹配一个表达式
-                if (!child) {
-                    throw new Error('变量初始化失败，需要一个表达式');
-                } else {
-                    node.children.push(child);
-                    console.log(node);
+            if (token.type === TokenType.Identifier) {
+                token = tokens.read();
+                node = new SimpleASTNode(ASTNodeType.IntDeclaration, token.text);
+                token = tokens.peek();
+                if (token && token.type === TokenType.Assignment) {
+                    tokens.read(); // 消耗掉 =
+                    let child = this.additive(tokens); //匹配一个表达式
+                    if (child == null) {
+                        throw new Error("invalide variable initialization, expecting an expression");
+                    } else {
+                        node.children.push(child);
+                        console.log(node);
+                    }
                 }
+            } else {
+                throw new Error('variable name expected')
             }
-
-        } else {
-            throw new Error('变量名 expected')
         }
+
+        return node;
     }
 
     /**
@@ -192,17 +184,17 @@ class SimpleCalculator {
         //     }
         // }
 
-        if (child1 != null){
-            while(true){
+        if (child1 != null) {
+            while (true) {
                 let token = tokens.peek();
-                if (token != null && (token.type == TokenType.Plus || token.type == TokenType.Minus)){
+                if (token != null && (token.type == TokenType.Plus || token.type == TokenType.Minus)) {
                     token = tokens.read();
                     let child2 = this.multiplicative(tokens);
                     node = new SimpleASTNode(ASTNodeType.Additive, token?.text);
                     node.children.push(child1);
                     node.children.push(child2);
                     child1 = node;
-                }else {
+                } else {
                     break;
                 }
             }
@@ -264,30 +256,32 @@ class SimpleCalculator {
      * assignmentStatement : Identifier '=' additiveExpression ';';
      * @param tokens
      */
-    assignmentStatement(tokens: TokenReader){
+    assignmentStatement(tokens: TokenReader) {
         let node;
         let token = tokens.peek();
-        if (token != null){
-            if (token.type === TokenType.Identifier){
+        if (token != null) {
+            if (token.type === TokenType.Identifier) {
                 token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.AssignmentExp, token.text);
                 token = tokens.peek();  // 看看下一个是否等号
-                if (token.type === TokenType.Assignment){
+                if (token.type === TokenType.Assignment) {
                     tokens.read();
                     let child = this.additive(tokens);
-                    if (child != null){
+                    if (child != null) {
                         node.children.push(child);
                         token = tokens.peek();
-                        if (token.type === TokenType.SemiColon){
+                        if (token.type === TokenType.SemiColon) {
                             tokens.read();
-                        }else {
+                        } else {
                             throw new Error('invalid statement, expecting semicolon');
                         }
-                    }else {
+                    } else {
                         throw new Error('invalid statement, expecting semicolon');
                     }
                 } else {
                     // 回溯，吐出之前消化掉的标识符；
+                    tokens.unread();
+                    node = null;
                 }
             }
         }
@@ -299,27 +293,27 @@ class SimpleCalculator {
      * 基础表达式的定义，变量、字面量、或者在括号内的表达式，提升括号中的表达式的优先级
      * primaryExpression : Identifier | IntLiteral | '(' additiveExpression ')';
      */
-    primary(tokens: TokenReader){
+    primary(tokens: TokenReader) {
         let node;
         let token = tokens.peek();
-        if (token != null){
-            if (token.type === TokenType.Identifier){
+        if (token != null) {
+            if (token.type === TokenType.Identifier) {
                 token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.Identifier, token.text);
-            }else if (token.type === TokenType.IntLiteral) {
+            } else if (token.type === TokenType.IntLiteral) {
                 token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
-            }else if (token.type === TokenType.LeftParentheses){
+            } else if (token.type === TokenType.LeftParentheses) {
                 tokens.read();
                 node = this.additive(tokens);
-                if (node != null){
+                if (node != null) {
                     token = token[0];
-                    if (token != null && token.type === TokenType.RightParenthese ){
+                    if (token != null && token.type === TokenType.RightParenthese) {
                         tokens.read();
-                    }else {
+                    } else {
                         throw new Error("expecting right parentheses");
                     }
-                }else {
+                } else {
                     throw new Error("expecting an additive expression inside parentheses");
                 }
             }
