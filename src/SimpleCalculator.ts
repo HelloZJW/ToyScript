@@ -54,7 +54,27 @@ class SimpleCalculator {
                     }
                 }
             } else {
-                throw new Error('variable name expected')
+                throw new Error('variable name expected');
+            }
+        }
+
+        return node;
+    }
+
+
+    /**
+     * 表达式，目前只支持加法表达式
+     * expressionStatement : additiveExpression ';';
+     */
+    expressionStatement(tokens: TokenReader) {
+        let pos = tokens.position;
+        let node = this.additive(tokens);
+        if (node != null) {
+            if (tokens.peek().text === TokenType.SemiColon) {
+                tokens.read();
+            }else {
+                node = null;
+                tokens.position = pos; // 回溯；
             }
         }
 
