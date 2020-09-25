@@ -11,7 +11,7 @@ class SimpleCalculator {
     evaluate(script: string) {
         let parser = new SimpleParser();
         let rootNode = parser.parse(script);
-        this.dumpAST(rootNode, '');
+        parser.dumpAST(rootNode, '');
         this.evaluateHelper(rootNode, '');
     }
 
@@ -65,21 +65,8 @@ class SimpleCalculator {
         console.log(indent + 'Result:' + result);
         return result;
     }
-
-
-    /**
-     * 格式化打印树形 Node
-     * @param node
-     * @param indent
-     */
-    private dumpAST(node: SimpleASTNode, indent: string) {
-        console.log(indent + node.type + " " + node.value);
-        for (let child of node.children) {
-            this.dumpAST(child, indent + "\t");
-        }
-    }
 }
 
 
 let calculator = new SimpleCalculator();
-calculator.evaluate('2+3*5');
+calculator.evaluate('2+3*5;');

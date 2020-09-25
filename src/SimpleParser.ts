@@ -24,13 +24,65 @@ export class SimpleASTNode {
 }
 
 export class SimpleParser {
+    constructor() {
+    }
+
+    /**
+     * 将脚本解析为 tokens， 并把 tokens 解析为 AST
+     * @param script
+     */
+    parse(script: string): SimpleASTNode {
+        let lexer = new SimpleLexer();
+        let tokens = lexer.tokenize(script);
+
+        return this.program(tokens);
+    }
+
+    /**
+     * 格式化打印树形 Node
+     * @param node
+     * @param indent
+     */
+    public dumpAST(node: SimpleASTNode, indent: string) {
+        console.log(indent + node.type + " " + node.value);
+        for (let child of node.children) {
+            this.dumpAST(child, indent + "\t");
+        }
+    }
+
+    /**
+     * 构建程序 AST
+     * @param tokens
+     */
+    private program(tokens: TokenReader): SimpleASTNode {
+        let node = new SimpleASTNode(ASTNodeType.Program, 'Calculator');
+        while (tokens.peek() != null) {
+            let child = this.intDeclare(tokens);
+
+            if (child == null) {
+                child = this.expressionStatement(tokens);
+            }
+
+            if (child == null) {
+                child = this.assignmentStatement(tokens);
+            }
+            if (child) {
+                node.children.push(child);
+            } else {
+                throw new Error("unknown statement");
+            }
+        }
+
+        return node;
+    }
+
     /**
      * 产生式：intDeclaration : Int Identifier ('=' additiveExpression)?;
      * 整型变量声明，如：
      * int a;
      * int b = 2*3;
      */
-    intDeclare(tokens: TokenReader) {
+    private intDeclare(tokens: TokenReader) {
         let node: SimpleASTNode;
         let token = tokens.peek();
         if (token != null && token.type == TokenType.Int) {
@@ -47,11 +99,19 @@ export class SimpleParser {
                         throw new Error("invalide variable initialization, expecting an expression");
                     } else {
                         node.children.push(child);
-                        console.log(node);
                     }
                 }
             } else {
                 throw new Error('variable name expected');
+            }
+        }
+
+        if (node != null) {
+            token = tokens.peek();
+            if (token != null && token.type == TokenType.SemiColon) {
+                tokens.read();
+            } else {
+                throw new Error("invalid statement, expecting semicolon");
             }
         }
 
@@ -63,11 +123,12 @@ export class SimpleParser {
      * 表达式，目前只支持加法表达式
      * expressionStatement : additiveExpression ';';
      */
-    expressionStatement(tokens: TokenReader) {
+    private expressionStatement(tokens: TokenReader) {
         let pos = tokens.position;
         let node = this.additive(tokens);
         if (node != null) {
-            if (tokens.peek().text === TokenType.SemiColon) {
+            let token = tokens.peek();
+            if (token != null && token.type === TokenType.SemiColon) {
                 tokens.read();
             } else {
                 node = null;
@@ -79,36 +140,36 @@ export class SimpleParser {
     }
 
     /**
-     * 将脚本解析为 tokens， 并把 tokens 解析为 AST
-     * @param script
-     */
-    parse(script: string): SimpleASTNode {
-        let lexer = new SimpleLexer();
-        let tokens = lexer.tokenize(script);
-
-        return this.program(tokens);
-    }
-
-    /**
-     * 构建程序 AST
+     * assignmentStatement : Identifier '=' additiveExpression ';';
      * @param tokens
      */
-    program(tokens: TokenReader): SimpleASTNode {
-        let node = new SimpleASTNode(ASTNodeType.Program, 'Calculator');
-        while (tokens.peek() != null) {
-            let child = this.intDeclare(tokens);
-
-            if (child == null){
-                child = this.expressionStatement(tokens);
-            }
-
-            if (child == null){
-                child = this.assignmentStatement(tokens);
-            }
-            if (child) {
-                node.children.push(child);
-            }else {
-                throw new Error("unknown statement");
+    private assignmentStatement(tokens: TokenReader) {
+        let node;
+        let token = tokens.peek();
+        if (token != null) {
+            if (token.type === TokenType.Identifier) {
+                token = tokens.read();
+                node = new SimpleASTNode(ASTNodeType.AssignmentExp, token.text);
+                token = tokens.peek();  // 看看下一个是否等号
+                if (token.type === TokenType.Assignment) {
+                    tokens.read();
+                    let child = this.additive(tokens);
+                    if (child != null) {
+                        node.children.push(child);
+                        token = tokens.peek();
+                        if (token.type === TokenType.SemiColon) {
+                            tokens.read();
+                        } else {
+                            throw new Error('invalid statement, expecting semicolon');
+                        }
+                    } else {
+                        throw new Error('invalid statement, expecting semicolon');
+                    }
+                } else {
+                    // 回溯，吐出之前消化掉的标识符；
+                    tokens.unread();
+                    node = null;
+                }
             }
         }
 
@@ -132,7 +193,7 @@ export class SimpleParser {
      * 匹配 additiveExpression
      * @param tokens
      */
-    additive(tokens: TokenReader): SimpleASTNode {
+    private additive(tokens: TokenReader): SimpleASTNode {
         // 匹配 multiplicativeExpression
         let child1 = this.multiplicative(tokens);  // 计算第一个子节点
         let node = child1;
@@ -189,7 +250,7 @@ export class SimpleParser {
      * 匹配 multiplicativeExpression
      * @param tokens
      */
-    multiplicative(tokens: TokenReader) {
+    private multiplicative(tokens: TokenReader) {
         let child1: SimpleASTNode = this.primary(tokens);
         let node = child1;
 
@@ -214,47 +275,10 @@ export class SimpleParser {
     }
 
     /**
-     * assignmentStatement : Identifier '=' additiveExpression ';';
-     * @param tokens
-     */
-    assignmentStatement(tokens: TokenReader) {
-        let node;
-        let token = tokens.peek();
-        if (token != null) {
-            if (token.type === TokenType.Identifier) {
-                token = tokens.read();
-                node = new SimpleASTNode(ASTNodeType.AssignmentExp, token.text);
-                token = tokens.peek();  // 看看下一个是否等号
-                if (token.type === TokenType.Assignment) {
-                    tokens.read();
-                    let child = this.additive(tokens);
-                    if (child != null) {
-                        node.children.push(child);
-                        token = tokens.peek();
-                        if (token.type === TokenType.SemiColon) {
-                            tokens.read();
-                        } else {
-                            throw new Error('invalid statement, expecting semicolon');
-                        }
-                    } else {
-                        throw new Error('invalid statement, expecting semicolon');
-                    }
-                } else {
-                    // 回溯，吐出之前消化掉的标识符；
-                    tokens.unread();
-                    node = null;
-                }
-            }
-        }
-
-        return node;
-    }
-
-    /**
      * 基础表达式的定义，变量、字面量、或者在括号内的表达式，提升括号中的表达式的优先级
      * primaryExpression : Identifier | IntLiteral | '(' additiveExpression ')';
      */
-    primary(tokens: TokenReader) {
+    private primary(tokens: TokenReader) {
         let node;
         let token = tokens.peek();
         if (token != null) {
@@ -283,3 +307,16 @@ export class SimpleParser {
         return node;
     }
 }
+
+let parser = new SimpleParser();
+let script = 'int age = 45+2; age= 20; age+10*2;';
+let tree = parser.parse(script);
+parser.dumpAST(tree, "");
+
+script = "2+3+;";
+tree = parser.parse(script);
+parser.dumpAST(tree, "");
+
+script = "2+3*;";
+tree = parser.parse(script);
+parser.dumpAST(tree, "");
