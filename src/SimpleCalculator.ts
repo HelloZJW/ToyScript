@@ -260,6 +260,41 @@ class SimpleCalculator {
     }
 
     /**
+     * assignmentStatement : Identifier '=' additiveExpression ';';
+     * @param tokens
+     */
+    assignmentStatement(tokens: SimpleToken[]){
+        let node;
+        let token = tokens[0];
+        if (token != null){
+            if (token.type === TokenType.Identifier){
+                token = tokens.shift();
+                node = new SimpleASTNode(ASTNodeType.AssignmentExp, token.text);
+                token = tokens[0];  // 看看下一个是否等号
+                if (token.type === TokenType.Assignment){
+                    tokens.shift();
+                    let child = this.additive(tokens);
+                    if (child != null){
+                        node.children.push(child);
+                        token = tokens[0];
+                        if (token.type === TokenType.SemiColon){
+                            tokens.shift();
+                        }else {
+                            throw new Error('invalid statement, expecting semicolon');
+                        }
+                    }else {
+                        throw new Error('invalid statement, expecting semicolon');
+                    }
+                } else {
+                    // 回溯，吐出之前消化掉的标识符；
+                }
+            }
+        }
+
+        return node;
+    }
+
+    /**
      * 基础表达式的定义，变量、字面量、或者在括号内的表达式，提升括号中的表达式的优先级
      * primaryExpression : Identifier | IntLiteral | '(' additiveExpression ')';
      */
