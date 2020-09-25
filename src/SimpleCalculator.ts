@@ -240,19 +240,10 @@ class SimpleCalculator {
      * @param tokens
      */
     multiplicative(tokens: TokenReader) {
-        let child1: SimpleASTNode = null;
-        let token = tokens.peek();
-        // 匹配 IntLiteral
-        if (token != null) {
-            if (token.type === TokenType.IntLiteral) {
-                token = tokens.read();
-                child1 = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
-            }
-        }
-
+        let child1: SimpleASTNode = this.primary(tokens);
         let node = child1;
 
-        token = tokens.peek();
+        let token = tokens.peek();
         // node 为空 代表没有匹配 IntLiteral
         if (child1 != null && token != null) {
             // 匹配是否有嵌套的 multiplicativeExpression
