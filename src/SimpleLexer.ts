@@ -1,6 +1,7 @@
 import {TokenType} from "./TokenType";
-import {Token} from "./Token";
+import {SimpleToken} from "./Token";
 import {isAlpha, isBlank, isDigital} from "./Utils";
+import {TokenReader} from "./TokenReader";
 
 enum DfaState {
     Initial,
@@ -21,12 +22,6 @@ enum DfaState {
     Int
 }
 
-
-export class SimpleToken implements Token {
-    text = '';
-    type: TokenType;
-}
-
 export class SimpleLexer {
     private tokenText = '';
     private token = new SimpleToken();
@@ -35,7 +30,7 @@ export class SimpleLexer {
     constructor() {
     }
 
-    public tokenize(script: string) {
+    public tokenize(script: string):TokenReader {
         let state = DfaState.Initial;
         for (let ch of script) {
             switch (state) {
@@ -123,7 +118,7 @@ export class SimpleLexer {
             this.initToken(script[script.length - 1]);
         }
 
-        return this.tokens.concat([]);
+        return new TokenReader(this.tokens.concat());
     }
 
 

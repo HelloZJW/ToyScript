@@ -1,5 +1,6 @@
-import {SimpleLexer, SimpleToken} from "./SimpleLexer";
+import {SimpleLexer} from "./SimpleLexer";
 import {TokenType} from "./TokenType";
+import {TokenReader} from "./TokenReader";
 
 enum ASTNodeType {
     Program = 'Program',
@@ -41,19 +42,19 @@ class SimpleCalculator {
     IntDeclare() {
         let lexer = new SimpleLexer();
         let tokens = lexer.tokenize('int age = 45');
-        let token = tokens[0];
+        let token = tokens.peek();
         if (token.type !== TokenType.Int) {
             throw new Error('第一个 token 必须是 Int 关键字')
         }
 
-        tokens.shift(); // 消耗掉 Int
-        token = tokens[0];
+        tokens.read(); // 消耗掉 Int
+        token = tokens.peek();
         if (token.type === TokenType.Identifier) {
-            token = tokens.shift();
+            token = tokens.read();
             let node = new SimpleASTNode(ASTNodeType.IntDeclaration, token.text);
-            token = tokens[0];
+            token = tokens.peek();
             if (token && token.type === TokenType.Assignment) {
-                tokens.shift(); // 消耗掉 =
+                tokens.read(); // 消耗掉 =
                 let child = this.additive(tokens); //匹配一个表达式
                 if (!child) {
                     throw new Error('变量初始化失败，需要一个表达式');
@@ -144,7 +145,7 @@ class SimpleCalculator {
      * 构建程序 AST
      * @param tokens
      */
-    prog(tokens: SimpleToken[]): SimpleASTNode {
+    prog(tokens: TokenReader): SimpleASTNode {
         let node = new SimpleASTNode(ASTNodeType.Program, 'Calculator');
         let child = this.additive(tokens);
         if (child) node.children.push(child);
@@ -169,16 +170,16 @@ class SimpleCalculator {
      * 匹配 additiveExpression
      * @param tokens
      */
-    additive(tokens: SimpleToken[]): SimpleASTNode {
+    additive(tokens: TokenReader): SimpleASTNode {
         // 匹配 multiplicativeExpression
         let child1 = this.multiplicative(tokens);  // 计算第一个子节点
         let node = child1;
-        // let token = tokens[0];
+        // let token = tokens.peek();
         // if (child1 != null && token != null) {
         //     // 如果表达式没有结束，并且 下一个 Token 是加/减法法，匹配嵌套的 additiveExpression
         //     if (token.type === TokenType.Plus || token.type === TokenType.Minus) {
         //         // 处理 multiplicativeExpression Plus additiveExpression 产生式
-        //         token = tokens.shift();
+        //         token = tokens.read();
         //         // 加法表达式
         //         let child2 = this.additive(tokens);
         //         if (child2 != null) {
@@ -193,9 +194,9 @@ class SimpleCalculator {
 
         if (child1 != null){
             while(true){
-                let token = tokens[0];
+                let token = tokens.peek();
                 if (token != null && (token.type == TokenType.Plus || token.type == TokenType.Minus)){
-                    token = tokens.shift();
+                    token = tokens.read();
                     let child2 = this.multiplicative(tokens);
                     node = new SimpleASTNode(ASTNodeType.Additive, token?.text);
                     node.children.push(child1);
@@ -226,25 +227,25 @@ class SimpleCalculator {
      * 匹配 multiplicativeExpression
      * @param tokens
      */
-    multiplicative(tokens: SimpleToken[]) {
+    multiplicative(tokens: TokenReader) {
         let child1: SimpleASTNode = null;
-        let token = tokens[0];
+        let token = tokens.peek();
         // 匹配 IntLiteral
         if (token != null) {
             if (token.type === TokenType.IntLiteral) {
-                token = tokens.shift();
+                token = tokens.read();
                 child1 = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
             }
         }
 
         let node = child1;
 
-        token = tokens[0];
+        token = tokens.peek();
         // node 为空 代表没有匹配 IntLiteral
         if (child1 != null && token != null) {
             // 匹配是否有嵌套的 multiplicativeExpression
             if (token.type === TokenType.Star || token.type === TokenType.Slash) {
-                token = tokens.shift();
+                token = tokens.read();
                 let child2 = this.multiplicative(tokens);
                 if (child2 != null) {
                     node = new SimpleASTNode(ASTNodeType.Multiplicative, token.text);
@@ -263,22 +264,22 @@ class SimpleCalculator {
      * assignmentStatement : Identifier '=' additiveExpression ';';
      * @param tokens
      */
-    assignmentStatement(tokens: SimpleToken[]){
+    assignmentStatement(tokens: TokenReader){
         let node;
-        let token = tokens[0];
+        let token = tokens.peek();
         if (token != null){
             if (token.type === TokenType.Identifier){
-                token = tokens.shift();
+                token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.AssignmentExp, token.text);
-                token = tokens[0];  // 看看下一个是否等号
+                token = tokens.peek();  // 看看下一个是否等号
                 if (token.type === TokenType.Assignment){
-                    tokens.shift();
+                    tokens.read();
                     let child = this.additive(tokens);
                     if (child != null){
                         node.children.push(child);
-                        token = tokens[0];
+                        token = tokens.peek();
                         if (token.type === TokenType.SemiColon){
-                            tokens.shift();
+                            tokens.read();
                         }else {
                             throw new Error('invalid statement, expecting semicolon');
                         }
@@ -298,23 +299,23 @@ class SimpleCalculator {
      * 基础表达式的定义，变量、字面量、或者在括号内的表达式，提升括号中的表达式的优先级
      * primaryExpression : Identifier | IntLiteral | '(' additiveExpression ')';
      */
-    primary(tokens: SimpleToken[]){
+    primary(tokens: TokenReader){
         let node;
-        let token = tokens[0];
+        let token = tokens.peek();
         if (token != null){
             if (token.type === TokenType.Identifier){
-                token = tokens.shift();
+                token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.Identifier, token.text);
             }else if (token.type === TokenType.IntLiteral) {
-                token = tokens.shift();
+                token = tokens.read();
                 node = new SimpleASTNode(ASTNodeType.IntLiteral, token.text);
             }else if (token.type === TokenType.LeftParentheses){
-                tokens.shift();
+                tokens.read();
                 node = this.additive(tokens);
                 if (node != null){
                     token = token[0];
                     if (token != null && token.type === TokenType.RightParenthese ){
-                        tokens.shift();
+                        tokens.read();
                     }else {
                         throw new Error("expecting right parentheses");
                     }
