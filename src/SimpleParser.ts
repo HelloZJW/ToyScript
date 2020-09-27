@@ -308,15 +308,15 @@ export class SimpleParser {
     }
 }
 
-let parser = new SimpleParser();
-let script = 'int age = 45+2; age= 20; age+10*2;';
-let tree = parser.parse(script);
-parser.dumpAST(tree, "");
-
-script = "2+3+;";
-tree = parser.parse(script);
-parser.dumpAST(tree, "");
-
-script = "2+3*;";
-tree = parser.parse(script);
-parser.dumpAST(tree, "");
+// let parser = new SimpleParser();
+// let script = 'int age = 45+2; age= 20; age+10*2;';
+// let tree = parser.parse(script);
+// parser.dumpAST(tree, "");
+//
+// script = "2+3+;";
+// tree = parser.parse(script);
+// parser.dumpAST(tree, "");
+//
+// script = "2+3*;";
+// tree = parser.parse(script);
+// parser.dumpAST(tree, "");

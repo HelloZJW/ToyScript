@@ -1,6 +1,6 @@
 import {ASTNodeType, SimpleASTNode, SimpleParser} from "./SimpleParser";
 
-class SimpleCalculator {
+export class SimpleCalculator {
     constructor() {
     }
 
@@ -66,7 +66,6 @@ class SimpleCalculator {
         return result;
     }
 }
-
 
 let calculator = new SimpleCalculator();
 calculator.evaluate('2+3*5;');
