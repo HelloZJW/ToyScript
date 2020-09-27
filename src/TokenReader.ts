@@ -1,7 +1,7 @@
 import {Token} from "./Token";
 
 export class TokenReader {
-    protected tokens: Token[] = [];
+    tokens: Token[] = [];
     public position = 0;
 
     constructor(tokens) {

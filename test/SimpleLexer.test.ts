@@ -1,6 +1,5 @@
 import {SimpleLexer} from "../src/SimpleLexer";
 
-
 // 关系表达式
 let script = 'age >= 45';
 test(script, () => {
@@ -8,7 +7,8 @@ test(script, () => {
         "text": "45",
         "type": "IntLiteral"
     }]);
-    expect(JSON.stringify(new SimpleLexer().tokenize(script))).toBe(expected);
+    let tokenReader = new SimpleLexer().tokenize(script);
+    expect(JSON.stringify(tokenReader.tokens)).toBe(expected);
 });
 
 // 解析 变量声明和初始化语句
@@ -18,7 +18,8 @@ test(script2, () => {
         "text": "=",
         "type": "Assignment"
     }, {"text": "40", "type": "IntLiteral"}]);
-    expect(JSON.stringify(new SimpleLexer().tokenize(script2))).toBe(expected);
+
+    expect(JSON.stringify(new SimpleLexer().tokenize(script2).tokens)).toBe(expected);
 });
 
 
@@ -28,7 +29,7 @@ test(script3, () => {
         "text": "age",
         "type": "Identifier"
     }, {"text": "=", "type": "Assignment"}, {"text": "40", "type": "IntLiteral"}]);
-    expect(JSON.stringify(new SimpleLexer().tokenize(script3))).toBe(expected);
+    expect(JSON.stringify(new SimpleLexer().tokenize(script3).tokens)).toBe(expected);
 });
 
 
@@ -38,7 +39,7 @@ test(script4, () => {
         "text": "3",
         "type": "IntLiteral"
     }, {"text": "*", "type": "Star"}, {"text": "5", "type": "IntLiteral"}]);
-    expect(JSON.stringify(new SimpleLexer().tokenize(script4))).toBe(expected);
+    expect(JSON.stringify(new SimpleLexer().tokenize(script4).tokens)).toBe(expected);
 });
 
 
