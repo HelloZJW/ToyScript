@@ -11,6 +11,8 @@ enum DfaState {
     IntLiteral,
     Assignment,
     SemiColon,
+    LeftParentheses,
+    RightParentheses,
 
     Plus,
     Minus,
@@ -43,6 +45,8 @@ export class SimpleLexer {
                 case DfaState.Star:
                 case DfaState.Slash:
                 case DfaState.SemiColon:
+                case DfaState.LeftParentheses:
+                case DfaState.RightParentheses:
                     // 刚开始解析或者解析完成，是下一个 token 的开始
                     state = this.initToken(ch);
                     break;
@@ -185,6 +189,14 @@ export class SimpleLexer {
             // 第一个是 等于
             newState = DfaState.SemiColon;
             this.token.type = TokenType.SemiColon;
+            this.tokenText += ch;
+        } else if (ch === '('){
+            newState = DfaState.LeftParentheses;
+            this.token.type = TokenType.LeftParentheses;
+            this.tokenText += ch;
+        } else if (ch === ')'){
+            newState = DfaState.RightParentheses;
+            this.token.type = TokenType.RightParenthese;
             this.tokenText += ch;
         }
 

@@ -292,7 +292,7 @@ export class SimpleParser {
                 tokens.read();
                 node = this.additive(tokens);
                 if (node != null) {
-                    token = token[0];
+                    token = tokens.peek();
                     if (token != null && token.type === TokenType.RightParenthese) {
                         tokens.read();
                     } else {
