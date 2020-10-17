@@ -1,7 +1,5 @@
-// Generated from toy/ToyScript.g4 by ANTLR 4.8
-
+// Generated from /Users/troy_zhang/Learning/ToyScript/toyscript-java/src/main/toy/CommonLexer.g4 by ANTLR 4.8
 package main.toy;
-
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
@@ -12,7 +10,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class ToyScriptLexer extends Lexer {
+public class CommonLexer extends Lexer {
 	static { RuntimeMetaData.checkVersion("4.8", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -144,13 +142,13 @@ public class ToyScriptLexer extends Lexer {
 	}
 
 
-	public ToyScriptLexer(CharStream input) {
+	public CommonLexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "ToyScript.g4"; }
+	public String getGrammarFileName() { return "CommonLexer.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

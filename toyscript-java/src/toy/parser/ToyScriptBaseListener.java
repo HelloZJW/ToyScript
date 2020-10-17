@@ -1,6 +1,6 @@
-// Generated from toy/ToyScript.g4 by ANTLR 4.8
+// Generated from toy/parser/ToyScript.g4 by ANTLR 4.8
 
-package main.toy;
+package toy.parser;
 
 
 import org.antlr.v4.runtime.ParserRuleContext;
