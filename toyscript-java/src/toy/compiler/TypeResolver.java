@@ -67,6 +67,7 @@ public class TypeResolver extends ToyScriptBaseListener {
         }
     }
 
+
     //设置函数的返回值类型
     @Override
     public void exitFunctionDeclaration(FunctionDeclarationContext ctx) {
@@ -74,17 +75,13 @@ public class TypeResolver extends ToyScriptBaseListener {
         if (ctx.typeTypeOrVoid() != null) {
             function.returnType = at.typeOfNode.get(ctx.typeTypeOrVoid());
         }
-        else{
-            //TODO 如果是类的构建函数，返回值应该是一个类吧？
-
-        }
 
         //函数查重，检查名称和参数（这个时候参数已经齐了）
-//        Scope scope = at.enclosingScopeOfNode(ctx);
-//        Function found = Scope.getFunction(scope,function.name,function.getParamTypes());
-//        if (found != null && found != function){
-//            at.log("Function or method already Declared: " + ctx.getText(), ctx);
-//        }
+        Scope scope = at.enclosingScopeOfNode(ctx);
+        Function found = Scope.getFunction(scope,function.name,function.getParamTypes());
+        if (found != null && found != function){
+            at.log("Function or method already Declared: " + ctx.getText(), ctx);
+        }
 
     }
 
@@ -98,8 +95,8 @@ public class TypeResolver extends ToyScriptBaseListener {
 //
 //        // 添加到函数的参数列表里
 //        Scope scope = at.enclosingScopeOfNode(ctx);
-//        if (scope instanceof Symbol.Function) {    //TODO 从目前的语法来看，只有function才会使用FormalParameter
-//            ((Symbol.Function) scope).parameters.add(variable);
+//        if (scope instanceof Function) {
+//            ((Function) scope).parameters.add(variable);
 //        }
 //    }
 

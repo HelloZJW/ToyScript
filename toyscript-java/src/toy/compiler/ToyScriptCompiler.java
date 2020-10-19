@@ -57,8 +57,8 @@ public class ToyScriptCompiler {
         //解释执行
         ASTEvaluator visitor = new ASTEvaluator(at);
         Object result = visitor.visit(at.ast);
-        System.out.println("\nValue of : " + script);
-        System.out.println(result);
+//        System.out.println("\nValue of : " + script);
+//        System.out.println(result);
 
         return at;
     }

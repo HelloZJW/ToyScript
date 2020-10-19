@@ -12,9 +12,9 @@ import java.util.Stack;
  */
 public class TypeAndScopeScanner extends ToyScriptBaseListener {
 
-    private AnnotatedTree at = null;
+    private AnnotatedTree at;
 
-    private Stack<Scope> scopeStack = new Stack<Scope>();
+    private Stack<Scope> scopeStack = new Stack<>();
 
     public TypeAndScopeScanner(AnnotatedTree at) {
         this.at = at;
@@ -54,59 +54,16 @@ public class TypeAndScopeScanner extends ToyScriptBaseListener {
         popScope();
     }
 
-    @Override
-    public void enterBlock(BlockContext ctx) {
-
-        //对于函数，不需要再额外建一个scope
-        if (!(ctx.parent instanceof FunctionBodyContext)) {
-            BlockScope scope = new BlockScope(currentScope(), ctx);
-            currentScope().addSymbol(scope);
-            pushScope(scope, ctx);
-        }
-    }
-
-    @Override
-    public void exitBlock(BlockContext ctx) {
-        if (!(ctx.parent instanceof FunctionBodyContext)) {
-            popScope();
-        }
-    }
-
-
-    @Override
-    public void enterStatement(StatementContext ctx) {
-        //为for建立额外的Scope
-        if (ctx.FOR() != null) {
-            BlockScope scope = new BlockScope(currentScope(), ctx);
-            currentScope().addSymbol(scope);
-            pushScope(scope, ctx);
-        }
-    }
-
-    @Override
-    public void exitStatement(StatementContext ctx) {
-        //释放for语句的外层scope
-        if (ctx.FOR() != null) {
-            popScope();
-        }
-    }
-
-
-    @Override
-    public void enterVariableDeclarator(VariableDeclaratorContext ctx) {
-
-    }
 
     @Override
     public void enterFunctionDeclaration(FunctionDeclarationContext ctx) {
         String idName = ctx.IDENTIFIER().getText();
 
+        Scope current = currentScope();
         //注意：目前funtion的信息并不完整，参数要等到TypeResolver.java中去确定。
-        Function function = new Function(idName, currentScope(), ctx);
+        Function function = new Function(idName, current, ctx);
 
-        at.types.add(function);
-
-        currentScope().addSymbol(function);
+        current.addSymbol(function);
 
         // 创建一个新的scope
         pushScope(function, ctx);

@@ -286,7 +286,8 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         Object rtn = null;
         if (ctx.statementExpression != null) {
             rtn = visitExpression(ctx.statementExpression);
-        } else if (ctx.IF() != null) {
+        }
+        else if (ctx.IF() != null) {
             Boolean condition = (Boolean) visitParExpression(ctx.parExpression());
             if (Boolean.TRUE == condition) {
                 rtn = visitStatement(ctx.statement(0));
@@ -294,7 +295,19 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
                 rtn = visitStatement(ctx.statement(1));
             }
         }
+        else if (ctx.RETURN() != null) {
+            if (ctx.expression() != null) {
+                rtn = visitExpression(ctx.expression());
 
+                //return语句应该不需要左值   //TODO 取左值的场景需要优化，目前都是取左值。
+                if (rtn instanceof LValue){
+                    rtn = ((LValue)rtn).getValue();
+                }
+            }
+
+            //把真实的返回值封装在一个ReturnObject对象里，告诉visitBlockStatements停止执行下面的语句
+            rtn = new ReturnObject(rtn);
+        }
         return rtn;
     }
 
@@ -477,26 +490,14 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     private FunctionObject getFunctionObject(FunctionCallContext ctx){
         if (ctx.IDENTIFIER() == null) return null;
 
-        Function function = null;
         FunctionObject functionObject = null;
 
-        Symbol symbol = at.enclosingScopeOfNode(ctx);
-        //函数类型的变量
-        if (symbol instanceof Variable) {
-            Variable variable = (Variable) symbol;
-            LValue lValue = getLValue(variable);
-            Object value = lValue.getValue();
-            if (value instanceof FunctionObject) {
-                functionObject = (FunctionObject) value;
-                function = functionObject.function;
-            }
-        }
-        //普通函数
-        else if (symbol instanceof Function) {
-            function = (Function) symbol;
-        }
-        //报错
-        else {
+        Scope scope = at.enclosingScopeOfNode(ctx);
+        List<Type> paramTypes = getParamTypes(ctx);
+        //从当前Scope逐级查找函数(或方法)
+        Function function = at.lookupFunction(scope, ctx.IDENTIFIER().getText(), paramTypes);
+
+        if (function == null){
             String functionName = ctx.IDENTIFIER().getText();  //这是调用时的名称，不一定是真正的函数名，还可能是函数类型的变量名
             at.log("unable to find function or function variable " + functionName, ctx);
             return null;
@@ -546,6 +547,23 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         return rtn;
     }
 
+    /**
+     * 获得函数的参数列表
+     *
+     * @param ctx
+     * @return
+     */
+    private List<Type> getParamTypes(FunctionCallContext ctx) {
+        List<Type> paramTypes = new LinkedList<Type>();
+        if (ctx.expressionList() != null) {
+            for (ExpressionContext exp : ctx.expressionList().expression()) {
+                Type type = at.typeOfNode.get(exp);
+                paramTypes.add(type);
+            }
+        }
+        return paramTypes;
+    }
+
     ///////////////////////////////////////////////////////////
     /// 各种运算
     private Object add(Object obj1, Object obj2, Type targetType) {
@@ -576,7 +594,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             if (value instanceof LValue) {
                 value = ((LValue) value).getValue();
             }
-            System.out.println(value);
+            System.out.println("inner println:" + value);
         }
         else{
             System.out.println();
