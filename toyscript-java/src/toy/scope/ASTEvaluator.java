@@ -2,6 +2,7 @@ package toy.scope;
 
 import toy.parser.ToyScriptBaseVisitor;
 import toy.parser.ToyScriptParser;
+import toy.parser.ToyScriptParser.*;
 import java.util.Stack;
 
 public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
@@ -107,17 +108,98 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         System.out.println("-----------------------------\n");
     }
 
+
+    public LValue getLValue(Variable variable) {
+        StackFrame f = stack.peek();
+
+        ToyObject valueContainer = null;
+        while (f != null) {
+            if (f.scope.containsSymbol(variable)) { //对于对象来说，会查找所有父类的属性
+                valueContainer = f.object;
+                break;
+            }
+            f = f.parentFrame;
+        }
+
+        //通过正常的作用域找不到，就从闭包里找
+        //原理：PlayObject中可能有一些变量，其作用域跟StackFrame.scope是不同的。
+        if (valueContainer == null){
+            f = stack.peek();
+            while (f != null) {
+                if (f.contains(variable)) {
+                    valueContainer = f.object;
+                    break;
+                }
+                f = f.parentFrame;
+            }
+        }
+
+        MyLValue lvalue = new MyLValue(valueContainer, variable);
+
+        return lvalue;
+    }
+
+    //自己实现的左值对象。
+
+    private final class MyLValue implements LValue {
+        private Variable variable;
+        private ToyObject valueContainer;
+
+        public MyLValue(ToyObject valueContainer, Variable variable) {
+            this.valueContainer = valueContainer;
+            this.variable = variable;
+        }
+
+        @Override
+        public Object getValue() {
+            return valueContainer.getValue(variable);
+        }
+
+        @Override
+        public void setValue(Object value) {
+            valueContainer.setValue(variable, value);
+        }
+
+        @Override
+        public Variable getVariable() {
+            return variable;
+        }
+
+        @Override
+        public String toString() {
+            return "LValue of " + variable.name + " : " + getValue();
+        }
+
+        @Override
+        public ToyObject getValueContainer() {
+            return valueContainer;
+        }
+    }
+
+
     @Override
-    public Object visitBlockStatements(ToyScriptParser.BlockStatementsContext ctx) {
+    public Object visitBlockStatements(BlockStatementsContext ctx) {
         Object rtn = null;
-        for (ToyScriptParser.BlockStatementContext child : ctx.blockStatement()) {
+        for (BlockStatementContext child : ctx.blockStatement()) {
             rtn = visitBlockStatement(child);
         }
         return rtn;
     }
 
     @Override
-    public Object visitPrimary(ToyScriptParser.PrimaryContext ctx) {
+    public Object visitProg(ProgContext ctx) {
+        Object rtn = null;
+        pushStack(new StackFrame((BlockScope) at.node2Scope.get(ctx)));
+
+        rtn = visitBlockStatements(ctx.blockStatements());
+
+        popStack();
+
+        return rtn;
+    }
+
+    @Override
+    public Object visitPrimary(PrimaryContext ctx) {
         Object rtn = null;
         //字面量
         if (ctx.literal() != null) {
@@ -131,10 +213,33 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         return rtn;
     }
 
+    @Override
+    public Object visitPrimitiveType(PrimitiveTypeContext ctx) {
+        Object rtn = null;
+        if (ctx.INT() != null) {
+            rtn = ToyScriptParser.INT;
+        } else if (ctx.LONG() != null) {
+            rtn = ToyScriptParser.LONG;
+        } else if (ctx.FLOAT() != null) {
+            rtn = ToyScriptParser.FLOAT;
+        } else if (ctx.DOUBLE() != null) {
+            rtn = ToyScriptParser.DOUBLE;
+        } else if (ctx.BOOLEAN() != null) {
+            rtn = ToyScriptParser.BOOLEAN;
+        } else if (ctx.CHAR() != null) {
+            rtn = ToyScriptParser.CHAR;
+        } else if (ctx.SHORT() != null) {
+            rtn = ToyScriptParser.SHORT;
+        } else if (ctx.BYTE() != null) {
+            rtn = ToyScriptParser.BYTE;
+        }
+        return rtn;
+    }
+
     /// visit每个节点
 
     @Override
-    public Object visitBlock(ToyScriptParser.BlockContext ctx) {
+    public Object visitBlock(BlockContext ctx) {
         BlockScope scope = (BlockScope) at.node2Scope.get(ctx);
         if (scope != null){  //有些block是不对应scope的，比如函数底下的block.
             StackFrame frame = new StackFrame(scope);
@@ -153,7 +258,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitBlockStatement(ToyScriptParser.BlockStatementContext ctx) {
+    public Object visitBlockStatement(BlockStatementContext ctx) {
         Object rtn = null;
         if (ctx.variableDeclarators() != null) {
             rtn = visitVariableDeclarators(ctx.variableDeclarators());
@@ -165,7 +270,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
 
 
     @Override
-    public Object visitStatement(ToyScriptParser.StatementContext ctx){
+    public Object visitStatement(StatementContext ctx){
         Object rtn = null;
         if (ctx.statementExpression != null) {
             rtn = visitExpression(ctx.statementExpression);
@@ -182,7 +287,54 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitExpression(ToyScriptParser.ExpressionContext ctx) {
+    public Object visitTypeType(TypeTypeContext ctx) {
+        return visitPrimitiveType(ctx.primitiveType());
+    }
+
+    @Override
+    public Object visitVariableInitializer(VariableInitializerContext ctx) {
+        Object rtn = null;
+        if (ctx.expression() != null) {
+            rtn = visitExpression(ctx.expression());
+        }
+        return rtn;
+    }
+
+    @Override
+    public Object visitVariableDeclarator(VariableDeclaratorContext ctx) {
+        Object rtn = null;
+        LValue lValue = (LValue) visitVariableDeclaratorId(ctx.variableDeclaratorId());
+        if (ctx.variableInitializer() != null) {
+            rtn = visitVariableInitializer(ctx.variableInitializer());
+            if (rtn instanceof LValue) {
+                rtn = ((LValue) rtn).getValue();
+            }
+            lValue.setValue(rtn);
+        }
+        return rtn;
+    }
+
+    @Override
+    public Object visitVariableDeclaratorId(VariableDeclaratorIdContext ctx) {
+        Object rtn = null;
+
+        Symbol symbol = at.symbolOfNode.get(ctx);
+        rtn = getLValue((Variable) symbol);
+        return rtn;
+    }
+
+    @Override
+    public Object visitVariableDeclarators(VariableDeclaratorsContext ctx) {
+        Object rtn = null;
+        // Integer typeType = (Integer)visitTypeType(ctx.typeType()); //后面要利用这个类型信息
+        for (VariableDeclaratorContext child : ctx.variableDeclarator()) {
+            rtn = visitVariableDeclarator(child);
+        }
+        return rtn;
+    }
+
+    @Override
+    public Object visitExpression(ExpressionContext ctx) {
         Object rtn = null;
         if (ctx.bop != null && ctx.expression().size() >= 2) {
             Object left = visitExpression(ctx.expression(0));
@@ -218,7 +370,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
 
 
     @Override
-    public Object visitLiteral(ToyScriptParser.LiteralContext ctx) {
+    public Object visitLiteral(LiteralContext ctx) {
         Object rtn = null;
 
         //整数
@@ -230,7 +382,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitIntegerLiteral(ToyScriptParser.IntegerLiteralContext ctx) {
+    public Object visitIntegerLiteral(IntegerLiteralContext ctx) {
         Object rtn = null;
         if (ctx.DECIMAL_LITERAL() != null) {
             rtn = Integer.valueOf(ctx.DECIMAL_LITERAL().getText());

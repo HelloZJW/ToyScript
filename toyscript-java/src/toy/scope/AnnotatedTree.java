@@ -14,7 +14,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * 3.作用域Scope。在Scope中包含了该作用域的所有符号。Variable、Function、Class等都是符号。
  */
 public class AnnotatedTree {
-    protected AnnotatedTree() { };
+    protected AnnotatedTree() {
+    }
+
+    ;
     // AST
     protected ParseTree ast = null;
 
@@ -33,37 +36,46 @@ public class AnnotatedTree {
     // 命名空间
     NameSpace nameSpace = null;  //全局命名空间
 
-//    //语义分析过程中生成的信息，包括普通信息、警告和错误
-//    protected List<CompilationLog> logs = new LinkedList<CompilationLog>();
-//
-//    //在构造函数里,引用的this()。第二个函数是被调用的构造函数
-//    protected Map<Function, Function> thisConstructorRef = new HashMap<>();
-//
-//    //在构造函数里,引用的super()。第二个函数是被调用的构造函数
-//    protected Map<Function, Function> superConstructorRef = new HashMap<>();
-
-
     /**
      * 输出本Scope中的内容，包括每个变量的名称、类型。
+     *
      * @return 树状显示的字符串
      */
-    public String getScopeTreeString(){
+    public String getScopeTreeString() {
         StringBuffer sb = new StringBuffer();
         scopeToString(sb, nameSpace, "");
         return sb.toString();
     }
 
-    private void scopeToString(StringBuffer sb, Scope scope, String indent){
-        sb.append(indent).append(scope).append('\n');
-        for (Symbol symbol : scope.symbols){
-            if (symbol instanceof Scope){
-                scopeToString(sb, (Scope)symbol, indent+"\t");
+    /**
+     * 查找某节点所在的Scope
+     * 算法：逐级查找父节点，找到一个对应着Scope的上级节点
+     *
+     * @param node
+     * @return
+     */
+    public Scope enclosingScopeOfNode(ParserRuleContext node) {
+        Scope rtn = null;
+        ParserRuleContext parent = node.getParent();
+        if (parent != null) {
+            rtn = node2Scope.get(parent);
+            if (rtn == null) {
+                rtn = enclosingScopeOfNode(parent);
             }
-            else{
+
+        }
+
+        return rtn;
+    }
+
+    private void scopeToString(StringBuffer sb, Scope scope, String indent) {
+        sb.append(indent).append(scope).append('\n');
+        for (Symbol symbol : scope.symbols) {
+            if (symbol instanceof Scope) {
+                scopeToString(sb, (Scope) symbol, indent + "\t");
+            } else {
                 sb.append(indent).append("\t").append(symbol).append('\n');
             }
         }
     }
-
-
 }

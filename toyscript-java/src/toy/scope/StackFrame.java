@@ -15,6 +15,18 @@ public class StackFrame {
     //实际存放变量的地方
     ToyObject object = null;
 
+    /**
+     * 本栈桢里有没有包含某个变量的数据
+     * @param variable
+     * @return
+     */
+    protected boolean contains(Variable variable) {
+        if(object != null && object.fields != null){
+            return object.fields.containsKey(variable);
+        }
+        return false;
+    }
+
     public StackFrame(BlockScope scope){
         this.scope = scope;
         this.object = new ToyObject();
