@@ -107,7 +107,6 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         System.out.println("-----------------------------\n");
     }
 
-
     @Override
     public Object visitBlockStatements(ToyScriptParser.BlockStatementsContext ctx) {
         Object rtn = null;
@@ -125,6 +124,10 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             rtn = visitLiteral(ctx.literal());
         }
 
+        //括号括起来的表达式
+        else if (ctx.expression() != null){
+            rtn = visitExpression(ctx.expression());
+        }
         return rtn;
     }
 
