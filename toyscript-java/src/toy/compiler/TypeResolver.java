@@ -1,5 +1,7 @@
-package toy.scope;
+package toy.compiler;
 
+import toy.compiler.type.*;
+import toy.compiler.type.Class;
 import toy.parser.ToyScriptBaseListener;
 import toy.parser.ToyScriptParser.*;
 
@@ -34,8 +36,7 @@ public class TypeResolver extends ToyScriptBaseListener {
     public void exitVariableDeclarators(VariableDeclaratorsContext ctx) {
         Scope scope = at.enclosingScopeOfNode(ctx);
 
-        //Aaaaaaaaaaayou同学请看这里。
-        if (scope instanceof Class  || enterLocalVariable){
+        if (scope instanceof Class || enterLocalVariable){
             // 设置变量类型
             Type type = (Type) at.typeOfNode.get(ctx.typeType());
 
@@ -58,7 +59,7 @@ public class TypeResolver extends ToyScriptBaseListener {
 
             //变量查重
             if (Scope.getVariable(scope, idName) != null) {
-//                at.log("Variable or parameter already Declared: " + idName, ctx);
+                at.log("Variable or parameter already Declared: " + idName, ctx);
             }
 
             scope.addSymbol(variable);
@@ -69,7 +70,7 @@ public class TypeResolver extends ToyScriptBaseListener {
     //设置函数的返回值类型
     @Override
     public void exitFunctionDeclaration(FunctionDeclarationContext ctx) {
-        Function function = (Function) at.node2Scope.get(ctx);
+        Symbol.Function function = (Symbol.Function) at.node2Scope.get(ctx);
         if (ctx.typeTypeOrVoid() != null) {
             function.returnType = at.typeOfNode.get(ctx.typeTypeOrVoid());
         }
@@ -79,7 +80,7 @@ public class TypeResolver extends ToyScriptBaseListener {
         }
 
         //函数查重，检查名称和参数（这个时候参数已经齐了）
-        Scope scope = at.enclosingScopeOfNode(ctx);
+//        Scope scope = at.enclosingScopeOfNode(ctx);
 //        Function found = Scope.getFunction(scope,function.name,function.getParamTypes());
 //        if (found != null && found != function){
 //            at.log("Function or method already Declared: " + ctx.getText(), ctx);
@@ -97,8 +98,8 @@ public class TypeResolver extends ToyScriptBaseListener {
 
         // 添加到函数的参数列表里
         Scope scope = at.enclosingScopeOfNode(ctx);
-        if (scope instanceof Function) {    //TODO 从目前的语法来看，只有function才会使用FormalParameter
-            ((Function) scope).parameters.add(variable);
+        if (scope instanceof Symbol.Function) {    //TODO 从目前的语法来看，只有function才会使用FormalParameter
+            ((Symbol.Function) scope).parameters.add(variable);
         }
     }
 
@@ -158,24 +159,24 @@ public class TypeResolver extends ToyScriptBaseListener {
 //        }
 //    }
 
-//    @Override
-//    public void exitFunctionType(FunctionTypeContext ctx) {
-//        DefaultFunctionType functionType = new DefaultFunctionType();
-//        at.types.add(functionType);
-//
-//        at.typeOfNode.put(ctx, functionType);
-//
-//        functionType.returnType = (Type) at.typeOfNode.get(ctx.typeTypeOrVoid());
-//
-//        // 参数的类型
-//        if (ctx.typeList() != null) {
-//            TypeListContext tcl = (TypeListContext) ctx.typeList();
-//            for (TypeTypeContext ttc : tcl.typeType()) {
-//                Type type = (Type) at.typeOfNode.get(ttc);
-//                functionType.paramTypes.add(type);
-//            }
-//        }
-//    }
+    @Override
+    public void exitFunctionType(FunctionTypeContext ctx) {
+        DefaultFunctionType functionType = new DefaultFunctionType();
+        at.types.add(functionType);
+
+        at.typeOfNode.put(ctx, functionType);
+
+        functionType.returnType = (Type) at.typeOfNode.get(ctx.typeTypeOrVoid());
+
+        // 参数的类型
+        if (ctx.typeList() != null) {
+            TypeListContext tcl = (TypeListContext) ctx.typeList();
+            for (TypeTypeContext ttc : tcl.typeType()) {
+                Type type = (Type) at.typeOfNode.get(ttc);
+                functionType.paramTypes.add(type);
+            }
+        }
+    }
 
     @Override
     public void exitPrimitiveType(PrimitiveTypeContext ctx) {

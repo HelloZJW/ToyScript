@@ -1,8 +1,13 @@
-package toy.scope;
+package toy.compiler;
 
+import toy.compiler.type.LValue;
+import toy.compiler.type.Type;
 import toy.parser.ToyScriptBaseVisitor;
 import toy.parser.ToyScriptParser;
 import toy.parser.ToyScriptParser.*;
+
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
 public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
@@ -176,7 +181,6 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         }
     }
 
-
     @Override
     public Object visitBlockStatements(BlockStatementsContext ctx) {
         Object rtn = null;
@@ -204,6 +208,15 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         //字面量
         if (ctx.literal() != null) {
             rtn = visitLiteral(ctx.literal());
+        }
+        else if (ctx.IDENTIFIER() != null){
+            Symbol symbol = at.symbolOfNode.get(ctx);
+            if (symbol instanceof Variable){
+                rtn = getLValue((Variable) symbol);
+            } else if (symbol instanceof Symbol.Function){
+                FunctionObject obj = new FunctionObject((Symbol.Function) symbol);
+                rtn = obj;
+            }
         }
 
         //括号括起来的表达式
@@ -363,11 +376,12 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             }
         } else if (ctx.primary() != null) {
             rtn = visitPrimary(ctx.primary());
+        } else if (ctx.functionCall() != null){
+            rtn = visitFunctionCall(ctx.functionCall());
         }
 
         return rtn;
     }
-
 
     @Override
     public Object visitLiteral(LiteralContext ctx) {
@@ -387,6 +401,149 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
         if (ctx.DECIMAL_LITERAL() != null) {
             rtn = Integer.valueOf(ctx.DECIMAL_LITERAL().getText());
         }
+        return rtn;
+    }
+
+
+    ///////////////////////////////////////////////////////////
+    /// 函数相关
+
+    @Override
+    public Object visitFunctionDeclaration(FunctionDeclarationContext ctx) {
+        return visitFunctionBody(ctx.functionBody());
+    }
+
+    @Override
+    public Object visitFunctionBody(FunctionBodyContext ctx) {
+        Object rtn = null;
+        if (ctx.block() != null) {
+            rtn = visitBlock(ctx.block());
+        }
+        return rtn;
+    }
+
+    @Override
+    public Object visitFunctionCall(FunctionCallContext ctx) {
+        Object rtn = null;
+
+        String functionName = ctx.IDENTIFIER().getText();  //这是调用时的名称，不一定是真正的函数名，还可能是函数尅性的变量名
+
+        if(functionName.equals("println")){
+            // TODO 临时代码，用于打印输出
+            println(ctx);
+            return rtn;
+        }
+
+        //在上下文中查找出函数，并根据需要创建FunctionObject
+        FunctionObject functionObject = getFunctionObject(ctx);
+        //计算参数值
+        List<Object> paramValues = calcParamValues(ctx);
+
+        if (traceFunctionCall){
+            System.out.println("\n>>FunctionCall : " + ctx.getText());
+        }
+
+        rtn = functionCall(functionObject, paramValues);
+
+        return rtn;
+    }
+
+
+    /**
+     * 计算某个函数调用时的参数值
+     * @param ctx
+     * @return
+     */
+    private List<Object> calcParamValues(FunctionCallContext ctx){
+        List<Object> paramValues = new LinkedList<Object>();
+        if (ctx.expressionList() != null) {
+            for (ExpressionContext exp : ctx.expressionList().expression()) {
+                Object value = visitExpression(exp);
+                if (value instanceof LValue) {
+                    value = ((LValue) value).getValue();
+                }
+                paramValues.add(value);
+            }
+        }
+        return paramValues;
+    }
+
+    /**
+     * 根据函数调用的上下文，返回一个FunctionObject。
+     * 对于函数类型的变量，这个functionObject是存在变量里的；
+     * 对于普通的函数调用，此时创建一个。
+     * @param ctx
+     * @return
+     */
+    private FunctionObject getFunctionObject(FunctionCallContext ctx){
+        if (ctx.IDENTIFIER() == null) return null;  //暂时不支持this和super
+
+        Symbol.Function function = null;
+        FunctionObject functionObject = null;
+
+        Symbol symbol = at.symbolOfNode.get(ctx);
+        //函数类型的变量
+        if (symbol instanceof Variable) {
+            Variable variable = (Variable) symbol;
+            LValue lValue = getLValue(variable);
+            Object value = lValue.getValue();
+            if (value instanceof FunctionObject) {
+                functionObject = (FunctionObject) value;
+                function = functionObject.function;
+            }
+        }
+        //普通函数
+        else if (symbol instanceof Symbol.Function) {
+            function = (Symbol.Function) symbol;
+        }
+        //报错
+        else {
+            String functionName = ctx.IDENTIFIER().getText();  //这是调用时的名称，不一定是真正的函数名，还可能是函数类型的变量名
+            at.log("unable to find function or function variable " + functionName, ctx);
+            return null;
+        }
+
+        if (functionObject == null) {
+            functionObject = new FunctionObject(function);
+        }
+
+        return functionObject;
+    }
+
+    /**
+     * 执行一个函数的方法体。需要先设置参数值，然后再执行代码。
+     * @param functionObject
+     * @param paramValues
+     * @return
+     */
+    private Object functionCall(FunctionObject functionObject, List<Object> paramValues){
+        Object rtn = null;
+
+        //添加函数的栈桢
+        StackFrame functionFrame = new StackFrame(functionObject);
+        pushStack(functionFrame);
+
+        // 给参数赋值，这些值进入functionFrame
+        FunctionDeclarationContext functionCode = (FunctionDeclarationContext) functionObject.function.ctx;
+        if (functionCode.formalParameters().formalParameterList() != null) {
+            for (int i = 0; i < functionCode.formalParameters().formalParameterList().formalParameter().size(); i++) {
+                FormalParameterContext param = functionCode.formalParameters().formalParameterList().formalParameter(i);
+                LValue lValue = (LValue) visitVariableDeclaratorId(param.variableDeclaratorId());
+                lValue.setValue(paramValues.get(i));
+            }
+        }
+
+        // 调用函数（方法）体
+        rtn = visitFunctionDeclaration(functionCode);
+
+        // 弹出StackFrame
+        popStack(); //函数的栈桢
+
+        //如果由一个return语句返回，真实返回值会被封装在一个ReturnObject里。
+        if (rtn instanceof ReturnObject){
+            rtn = ((ReturnObject)rtn).returnValue;
+        }
+
         return rtn;
     }
 
@@ -410,5 +567,20 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     private Object div(Object obj1, Object obj2, Type targetType) {
         Object rtn = ((Number) obj1).intValue() / ((Number) obj2).intValue();
         return rtn;
+    }
+
+
+    //自己硬编码的println方法
+    private void println(FunctionCallContext ctx){
+        if (ctx.expressionList() != null) {
+            Object value = visitExpressionList(ctx.expressionList());
+            if (value instanceof LValue) {
+                value = ((LValue) value).getValue();
+            }
+            System.out.println(value);
+        }
+        else{
+            System.out.println();
+        }
     }
 }

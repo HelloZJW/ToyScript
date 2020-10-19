@@ -1,6 +1,7 @@
-package toy.scope;
+package toy.compiler;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import toy.compiler.type.Type;
 
 public class Variable extends Symbol {
     //变量类型

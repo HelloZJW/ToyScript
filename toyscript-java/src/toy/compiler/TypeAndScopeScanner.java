@@ -1,4 +1,4 @@
-package toy.scope;
+package toy.compiler;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import toy.parser.ToyScriptBaseListener;
@@ -57,7 +57,7 @@ public class TypeAndScopeScanner extends ToyScriptBaseListener {
     public void enterBlock(BlockContext ctx) {
 
         //对于函数，不需要再额外建一个scope
-        if (!(ctx.parent instanceof FunctionBodyContext)){
+        if (!(ctx.parent instanceof FunctionBodyContext)) {
             BlockScope scope = new BlockScope(currentScope(), ctx);
             currentScope().addSymbol(scope);
             pushScope(scope, ctx);
@@ -95,7 +95,7 @@ public class TypeAndScopeScanner extends ToyScriptBaseListener {
         String idName = ctx.IDENTIFIER().getText();
 
         //注意：目前funtion的信息并不完整，参数要等到TypeResolver.java中去确定。
-        Function function = new Function(idName, currentScope(), ctx);
+        Symbol.Function function = new Symbol.Function(idName, currentScope(), ctx);
 
         at.types.add(function);
 

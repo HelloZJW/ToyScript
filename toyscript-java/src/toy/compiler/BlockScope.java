@@ -1,8 +1,8 @@
-package toy.scope;
+package toy.compiler;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 
-public class BlockScope extends Scope{
+public class BlockScope extends Scope {
     //给block编号的数字
     private static int index = 1;
 

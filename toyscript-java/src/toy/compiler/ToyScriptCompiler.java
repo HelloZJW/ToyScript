@@ -1,4 +1,4 @@
-package toy.scope;
+package toy.compiler;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

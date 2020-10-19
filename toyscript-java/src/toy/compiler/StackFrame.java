@@ -1,4 +1,4 @@
-package toy.scope;
+package toy.compiler;
 
 public class StackFrame {
     //该frame所对应的scope
@@ -31,9 +31,13 @@ public class StackFrame {
         this.scope = scope;
         this.object = new ToyObject();
     }
-//
-//    public StackFrame(ClassObject object){
-//        this.scope = object.type;
-//        this.object = object;
-//    }
+
+    /**
+     * 为函数调用创建一个StackFrame
+     * @param object
+     */
+    public StackFrame(FunctionObject object){
+        this.scope = object.function;
+        this.object = object;
+    }
 }

@@ -1,4 +1,4 @@
-package toy.scope;
+package toy.compiler;
 
 import java.util.HashMap;
 import java.util.Map;
