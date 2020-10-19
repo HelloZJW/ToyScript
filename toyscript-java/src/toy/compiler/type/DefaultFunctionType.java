@@ -18,7 +18,7 @@ public class DefaultFunctionType implements FunctionType {
     private static int nameIndex = 1;
 
     public DefaultFunctionType (){
-        name = "FunctionType" + nameIndex++;
+        name = "FunctxionType" + nameIndex++;
     }
 
     @Override

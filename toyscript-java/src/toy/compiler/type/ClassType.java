@@ -2,9 +2,9 @@ package toy.compiler.type;
 
 import toy.compiler.Scope;
 
-public class Class extends Scope implements Type {
+public class ClassType extends Scope implements Type {
     //父类
-    private Class parentClass = null; //= rootClass;
+    private ClassType parentClassType = null; //= rootClass;
 
 
     @Override

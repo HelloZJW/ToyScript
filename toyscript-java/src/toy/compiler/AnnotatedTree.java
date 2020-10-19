@@ -3,9 +3,12 @@ package toy.compiler;
 import java.util.*;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
+import toy.compiler.type.ClassType;
+import toy.compiler.type.Function;
 import toy.compiler.type.Type;
-
+import toy.parser.ToyScriptParser;
 
 /**
  * 注释树。
@@ -72,6 +75,22 @@ public class AnnotatedTree {
         return rtn;
     }
 
+    /**
+     * 包含某节点的类
+     * @param ctx
+     * @return
+     */
+    public ClassType enclosingClassOfNode(RuleContext ctx){
+        if (ctx.parent instanceof ToyScriptParser.ClassDeclarationContext){
+            return (ClassType) node2Scope.get(ctx.parent);
+        }
+        else if (ctx.parent == null){
+            return null;
+        }
+        else return enclosingClassOfNode(ctx.parent);
+    }
+
+
     private void scopeToString(StringBuffer sb, Scope scope, String indent) {
         sb.append(indent).append(scope).append('\n');
         for (Symbol symbol : scope.symbols) {
@@ -104,5 +123,100 @@ public class AnnotatedTree {
 
     public void log(String message, ParserRuleContext ctx) {
         this.log(message, CompilationLog.ERROR, ctx);
+    }
+
+    /**
+     * 通过名称查找Variable。逐级Scope查找。
+     *
+     * @param scope
+     * @param idName
+     * @return
+     */
+    protected Variable lookupVariable(Scope scope, String idName) {
+        Variable rtn = scope.getVariable(idName);
+
+        if (rtn == null && scope.enclosingScope != null) {
+            rtn = lookupVariable(scope.enclosingScope, idName);
+        }
+        return rtn;
+    }
+
+
+    /**
+     * 通过方法的名称和方法签名查找Function。逐级Scope查找。
+     *
+     * @param scope
+     * @param idName
+     * @param paramTypes
+     * @return
+     */
+    protected Function lookupFunction(Scope scope, String idName, List<Type> paramTypes) {
+        Function rtn = scope.getFunction(idName, paramTypes);
+
+
+        if (rtn == null && scope.enclosingScope != null) {
+            rtn = lookupFunction(scope.enclosingScope, idName, paramTypes);
+        }
+        return rtn;
+    }
+
+    /**
+     * 查找函数型变量，逐级查找。
+     * @param scope
+     * @param idName
+     * @param paramTypes
+     * @return
+     */
+    protected Variable lookupFunctionVariable(Scope scope, String idName, List<Type> paramTypes) {
+        Variable rtn = scope.getFunctionVariable(idName, paramTypes);
+
+        if (rtn == null && scope.enclosingScope != null) {
+            rtn = lookupFunctionVariable(scope.enclosingScope, idName, paramTypes);
+        }
+        return rtn;
+    }
+
+
+    /**
+     * 逐级查找函数（或方法）。仅通过名字查找。如果有重名的，返回第一个就算了。//TODO 未来应该报警。
+     * @param scope
+     * @param name
+     * @return
+     */
+    protected Function lookupFunction(Scope scope, String name){
+        Function rtn = null;
+        if (scope instanceof ClassType){
+            rtn = getMethodOnlyByName((ClassType)scope, name);
+        }
+        else {
+            rtn = getFunctionOnlyByName(scope, name);
+        }
+
+        if (rtn == null && scope.enclosingScope != null){
+            rtn = lookupFunction(scope.enclosingScope,name);
+        }
+
+        return rtn;
+    }
+
+
+    //对于类，需要连父类也查找
+    private Function getMethodOnlyByName(ClassType theClass, String name){
+        Function rtn = getFunctionOnlyByName(theClass, name);
+
+//        if (rtn == null && theClass.getParentClass() != null){
+//            rtn = getMethodOnlyByName(theClass.getParentClass(), name);
+//        }
+
+        return rtn;
+    }
+
+    private Function getFunctionOnlyByName(Scope scope, String name){
+        for (Symbol s : scope.symbols){
+            if (s instanceof Function && s.name.equals(name)){
+                return  (Function)s;
+            }
+        }
+        return  null;
     }
 }

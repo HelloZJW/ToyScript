@@ -5,7 +5,7 @@ import toy.compiler.type.Type;
 
 public class Variable extends Symbol {
     //变量类型
-    protected Type type = null;
+    public Type type = null;
   
     //// 作为parameter的变量的属性
     //缺省值

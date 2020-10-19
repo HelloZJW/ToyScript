@@ -1,5 +1,9 @@
 package toy.compiler;
 
+import toy.compiler.type.Function;
+import toy.compiler.type.FunctionType;
+import toy.compiler.type.Type;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -40,6 +44,69 @@ public abstract class Scope extends Symbol {
             }
         }
         return null;
+    }
+
+
+    /**
+     * 是否包含某个Function
+     * @param name
+     * @param paramTypes 参数类型。不允许为空。该参数不允许为空。如果没有参数，需要传入一个0长度的列表。
+     * @return
+     */
+    protected Function getFunction(String name, List<Type> paramTypes){
+        return getFunction(this,name,paramTypes);
+    }
+
+    /**
+     * 是否包含某个Function。这是个静态方法，可以做为工具方法重用。避免类里要超找父类的情况。
+     * @param scope
+     * @param name
+     * @param paramTypes
+     * @return
+     */
+    protected static Function getFunction(Scope scope, String name, List<Type> paramTypes){
+        Function rtn = null;
+        for (Symbol s : scope.symbols) {
+            if (s instanceof Function && s.name.equals(name)) {
+                Function function = (Function) s;
+                rtn = function;
+                break;
+//                if (function.matchParameterTypes(paramTypes)){
+//                    rtn = function;
+//                    break;
+//                }
+            }
+        }
+
+
+        return rtn;
+    }
+
+    /**
+     * 获取一个函数类型的变量，能匹配相应的参数类型
+     * @param name
+     * @param paramTypes
+     * @return
+     */
+    protected Variable getFunctionVariable(String name, List<Type> paramTypes){
+        return getFunctionVariable(this,name,paramTypes);
+    }
+
+    protected static Variable getFunctionVariable(Scope scope, String name, List<Type> paramTypes){
+        Variable rtn = null;
+        for (Symbol s : scope.symbols) {
+            if (s instanceof Variable && ((Variable) s).type instanceof FunctionType && s.name.equals(name)) {
+                Variable v = (Variable) s;
+                FunctionType functionType = (FunctionType) v.type;
+                if (functionType.matchParameterTypes(paramTypes)){
+                    rtn = v;
+                    break;
+                }
+            }
+        }
+
+
+        return rtn;
     }
 
     @Override

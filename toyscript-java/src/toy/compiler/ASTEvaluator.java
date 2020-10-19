@@ -1,7 +1,6 @@
 package toy.compiler;
 
-import toy.compiler.type.LValue;
-import toy.compiler.type.Type;
+import toy.compiler.type.*;
 import toy.parser.ToyScriptBaseVisitor;
 import toy.parser.ToyScriptParser;
 import toy.parser.ToyScriptParser.*;
@@ -213,8 +212,8 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             Symbol symbol = at.symbolOfNode.get(ctx);
             if (symbol instanceof Variable){
                 rtn = getLValue((Variable) symbol);
-            } else if (symbol instanceof Symbol.Function){
-                FunctionObject obj = new FunctionObject((Symbol.Function) symbol);
+            } else if (symbol instanceof Function){
+                FunctionObject obj = new FunctionObject((Function) symbol);
                 rtn = obj;
             }
         }
@@ -476,12 +475,12 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
      * @return
      */
     private FunctionObject getFunctionObject(FunctionCallContext ctx){
-        if (ctx.IDENTIFIER() == null) return null;  //暂时不支持this和super
+        if (ctx.IDENTIFIER() == null) return null;
 
-        Symbol.Function function = null;
+        Function function = null;
         FunctionObject functionObject = null;
 
-        Symbol symbol = at.symbolOfNode.get(ctx);
+        Symbol symbol = at.enclosingScopeOfNode(ctx);
         //函数类型的变量
         if (symbol instanceof Variable) {
             Variable variable = (Variable) symbol;
@@ -493,8 +492,8 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             }
         }
         //普通函数
-        else if (symbol instanceof Symbol.Function) {
-            function = (Symbol.Function) symbol;
+        else if (symbol instanceof Function) {
+            function = (Function) symbol;
         }
         //报错
         else {

@@ -1,7 +1,7 @@
 package toy.compiler;
 
 import toy.compiler.type.*;
-import toy.compiler.type.Class;
+import toy.compiler.type.ClassType;
 import toy.parser.ToyScriptBaseListener;
 import toy.parser.ToyScriptParser.*;
 
@@ -36,7 +36,7 @@ public class TypeResolver extends ToyScriptBaseListener {
     public void exitVariableDeclarators(VariableDeclaratorsContext ctx) {
         Scope scope = at.enclosingScopeOfNode(ctx);
 
-        if (scope instanceof Class || enterLocalVariable){
+        if (scope instanceof ClassType || enterLocalVariable){
             // 设置变量类型
             Type type = (Type) at.typeOfNode.get(ctx.typeType());
 
@@ -54,7 +54,7 @@ public class TypeResolver extends ToyScriptBaseListener {
         Scope scope = at.enclosingScopeOfNode(ctx);
 
         //第一步只把类的成员变量入符号表。在变量消解时，再把本地变量加入符号表，一边Enter，一边消解。
-        if (scope != null || enterLocalVariable) {
+        if (scope instanceof ClassType || enterLocalVariable) {
             Variable variable = new Variable(idName, scope, ctx);
 
             //变量查重
@@ -70,7 +70,7 @@ public class TypeResolver extends ToyScriptBaseListener {
     //设置函数的返回值类型
     @Override
     public void exitFunctionDeclaration(FunctionDeclarationContext ctx) {
-        Symbol.Function function = (Symbol.Function) at.node2Scope.get(ctx);
+        Function function = (Function) at.node2Scope.get(ctx);
         if (ctx.typeTypeOrVoid() != null) {
             function.returnType = at.typeOfNode.get(ctx.typeTypeOrVoid());
         }
@@ -89,39 +89,19 @@ public class TypeResolver extends ToyScriptBaseListener {
     }
 
     //设置函数的参数的类型，这些参数已经在enterVariableDeclaratorId中作为变量声明了，现在设置它们的类型
-    @Override
-    public void exitFormalParameter(FormalParameterContext ctx) {
-        // 设置参数类型
-        Type type = at.typeOfNode.get(ctx.typeType());
-        Variable variable = (Variable) at.symbolOfNode.get(ctx.variableDeclaratorId());
-        variable.type = (Type) type;
-
-        // 添加到函数的参数列表里
-        Scope scope = at.enclosingScopeOfNode(ctx);
-        if (scope instanceof Symbol.Function) {    //TODO 从目前的语法来看，只有function才会使用FormalParameter
-            ((Symbol.Function) scope).parameters.add(variable);
-        }
-    }
-
-//    //设置类的父类
 //    @Override
-//    public void enterClassDeclaration(ClassDeclarationContext ctx) {
-//        Class theClass = (Class) at.node2Scope.get(ctx);
+//    public void exitFormalParameter(FormalParameterContext ctx) {
+//        // 设置参数类型
+//        Type type = at.typeOfNode.get(ctx.typeType());
+//        Variable variable = (Variable) at.symbolOfNode.get(ctx.variableDeclaratorId());
+//        variable.type = (Type) type;
 //
-//        //设置父类
-//        if (ctx.EXTENDS() != null){
-//            String parentClassName = ctx.typeType().getText();
-//            Type type = at.lookupType(parentClassName);
-//            if (type != null && type instanceof Class){
-//                theClass.setParentClass ( (Class)type);
-//            }
-//            else{
-//                at.log("unknown class: " + parentClassName, ctx);
-//            }
+//        // 添加到函数的参数列表里
+//        Scope scope = at.enclosingScopeOfNode(ctx);
+//        if (scope instanceof Symbol.Function) {    //TODO 从目前的语法来看，只有function才会使用FormalParameter
+//            ((Symbol.Function) scope).parameters.add(variable);
 //        }
-//
 //    }
-
 
     @Override
     public void exitTypeTypeOrVoid(TypeTypeOrVoidContext ctx) {
@@ -148,16 +128,6 @@ public class TypeResolver extends ToyScriptBaseListener {
         }
 
     }
-
-//    @Override
-//    public void enterClassOrInterfaceType(ClassOrInterfaceTypeContext ctx) {
-//        if (ctx.IDENTIFIER() != null) {
-//            Scope scope = at.enclosingScopeOfNode(ctx);
-//            String idName = ctx.getText();
-//            Class theClass = at.lookupClass(scope, idName);
-//            at.typeOfNode.put(ctx, theClass);
-//        }
-//    }
 
     @Override
     public void exitFunctionType(FunctionTypeContext ctx) {

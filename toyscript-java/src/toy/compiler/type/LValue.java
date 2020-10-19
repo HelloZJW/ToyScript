@@ -1,6 +1,5 @@
 package toy.compiler.type;
 
-import toy.compiler.ToyObject;
 import toy.compiler.Variable;
 
 /**

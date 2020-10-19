@@ -1,6 +1,7 @@
 package toy.compiler;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import toy.compiler.type.Function;
 import toy.parser.ToyScriptBaseListener;
 import toy.parser.ToyScriptParser.*;
 
@@ -90,12 +91,18 @@ public class TypeAndScopeScanner extends ToyScriptBaseListener {
         }
     }
 
+
+    @Override
+    public void enterVariableDeclarator(VariableDeclaratorContext ctx) {
+
+    }
+
     @Override
     public void enterFunctionDeclaration(FunctionDeclarationContext ctx) {
         String idName = ctx.IDENTIFIER().getText();
 
         //注意：目前funtion的信息并不完整，参数要等到TypeResolver.java中去确定。
-        Symbol.Function function = new Symbol.Function(idName, currentScope(), ctx);
+        Function function = new Function(idName, currentScope(), ctx);
 
         at.types.add(function);
 
@@ -109,31 +116,4 @@ public class TypeAndScopeScanner extends ToyScriptBaseListener {
     public void exitFunctionDeclaration(FunctionDeclarationContext ctx) {
         popScope();
     }
-
-
-//    @Override
-//    public void enterClassDeclaration(ClassDeclarationContext ctx) {
-//        // 把类的签名存到符号表中，不能跟已有符号名称冲突
-//        String idName = ctx.IDENTIFIER().getText();
-//
-//        java.lang.Class theClass = new java.lang.Class(idName, ctx);
-//        at.types.add(theClass);
-//
-//        if (at.lookupClass(currentScope(), idName) != null) {
-//            at.log("duplicate class name:" + idName, ctx); // 只是报警，但仍然继续解析
-//        }
-//
-//        currentScope().addSymbol(theClass);
-//
-//        // 创建一个新的scope
-//        pushScope(theClass, ctx);
-//
-//    }
-
-    @Override
-    public void exitClassDeclaration(ClassDeclarationContext ctx) {
-        popScope();
-    }
-
-
 }

@@ -1,4 +1,6 @@
-package toy.compiler;
+package toy.compiler.type;
+
+import toy.compiler.Variable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,7 +10,7 @@ import java.util.Map;
  */
 public class ToyObject {
     //成员变量
-    protected Map<Variable, Object> fields = new HashMap<Variable, Object>();
+    public Map<Variable, Object> fields = new HashMap<Variable, Object>();
 
 
     public Object getValue(Variable variable){

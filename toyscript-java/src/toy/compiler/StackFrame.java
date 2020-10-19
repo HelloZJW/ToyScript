@@ -1,5 +1,8 @@
 package toy.compiler;
 
+import toy.compiler.type.FunctionObject;
+import toy.compiler.type.ToyObject;
+
 public class StackFrame {
     //该frame所对应的scope
     Scope scope = null;

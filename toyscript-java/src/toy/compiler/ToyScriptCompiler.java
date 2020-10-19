@@ -36,8 +36,8 @@ public class ToyScriptCompiler {
         walker.walk(pass2, at.ast);
 
         //pass3：消解有的变量应用、函数引用。另外还做了类型的推断。
-//        RefResolver pass3 = new RefResolver(at);
-//        walker.walk(pass3,at.ast);
+        RefResolver pass3 = new RefResolver(at);
+        walker.walk(pass3,at.ast);
 
         //pass4：类型检查
 //        TypeChecker pass4 = new TypeChecker(at);
