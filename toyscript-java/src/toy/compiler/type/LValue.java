@@ -1,4 +1,7 @@
-package toy.scope;
+package toy.compiler.type;
+
+import toy.compiler.ToyObject;
+import toy.compiler.Variable;
 
 /**
  * 对栈中的值的引用

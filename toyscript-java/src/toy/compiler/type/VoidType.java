@@ -1,4 +1,6 @@
-package toy.scope;
+package toy.compiler.type;
+
+import toy.compiler.Scope;
 
 public class VoidType implements Type {
     @Override

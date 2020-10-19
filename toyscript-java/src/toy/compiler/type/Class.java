@@ -1,6 +1,8 @@
-package toy.scope;
+package toy.compiler.type;
 
-public class Class extends Scope implements Type{
+import toy.compiler.Scope;
+
+public class Class extends Scope implements Type {
     //父类
     private Class parentClass = null; //= rootClass;
 

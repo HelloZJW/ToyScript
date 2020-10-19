@@ -1,4 +1,6 @@
-package toy.scope;
+package toy.compiler.type;
+
+import toy.compiler.Scope;
 
 public final class PrimitiveType implements Type {
 
