@@ -19,9 +19,9 @@ public class StackFrame {
         this.scope = scope;
         this.object = new ToyObject();
     }
-
-    public StackFrame(ClassObject object){
-        this.scope = object.type;
-        this.object = object;
-    }
+//
+//    public StackFrame(ClassObject object){
+//        this.scope = object.type;
+//        this.object = object;
+//    }
 }

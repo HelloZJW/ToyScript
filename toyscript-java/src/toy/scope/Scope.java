@@ -13,14 +13,3 @@ public abstract class Scope extends Symbol{
     }
 
 }
-
-//
-////函数作用域
-//public class Function extends Scope implements FunctionType{
-//
-//}
-//
-////类作用域
-//public class Class extends Scope implements Type{
-//
-//}
