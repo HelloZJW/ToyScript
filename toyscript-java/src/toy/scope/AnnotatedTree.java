@@ -2,9 +2,7 @@ package toy.scope;
 
 import java.util.*;
 
-import com.sun.deploy.cache.BaseLocalApplicationProperties;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 
@@ -16,6 +14,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  * 3.作用域Scope。在Scope中包含了该作用域的所有符号。Variable、Function、Class等都是符号。
  */
 public class AnnotatedTree {
+    protected AnnotatedTree() { };
     // AST
     protected ParseTree ast = null;
 
@@ -26,7 +25,7 @@ public class AnnotatedTree {
     protected Map<ParserRuleContext, Symbol> symbolOfNode = new HashMap<ParserRuleContext, Symbol>();
 
     // AST节点对应的Scope，如for、函数调用会启动新的Scope
-    public Map<ParserRuleContext, Scope> node2Scope = new HashMap<ParserRuleContext, Scope>();
+    protected Map<ParserRuleContext, Scope> node2Scope = new HashMap<ParserRuleContext, Scope>();
 
     // 用于做类型推断，每个节点推断出来的类型
     protected Map<ParserRuleContext, Type> typeOfNode = new HashMap<ParserRuleContext, Type>();
@@ -43,10 +42,6 @@ public class AnnotatedTree {
 //    //在构造函数里,引用的super()。第二个函数是被调用的构造函数
 //    protected Map<Function, Function> superConstructorRef = new HashMap<>();
 
-
-    protected AnnotatedTree() {
-
-    }
 
     /**
      * 输出本Scope中的内容，包括每个变量的名称、类型。
