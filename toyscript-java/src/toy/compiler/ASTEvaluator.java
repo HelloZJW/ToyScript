@@ -367,6 +367,14 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
             Object leftObject = left;
             Object rightObject = right;
 
+            if (left instanceof LValue) {
+                leftObject = ((LValue) left).getValue();
+            }
+
+            if (right instanceof LValue) {
+                rightObject = ((LValue) right).getValue();
+            }
+
             //本节点期待的数据类型
             Type type = at.typeOfNode.get(ctx);
 
@@ -568,6 +576,7 @@ public class ASTEvaluator extends ToyScriptBaseVisitor<Object> {
     /// 各种运算
     private Object add(Object obj1, Object obj2, Type targetType) {
         Object rtn = ((Number) obj1).intValue() + ((Number) obj2).intValue();
+
         return rtn;
     }
 

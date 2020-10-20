@@ -54,7 +54,7 @@ public class TypeResolver extends ToyScriptBaseListener {
         Scope scope = at.enclosingScopeOfNode(ctx);
 
         //第一步只把类的成员变量入符号表。在变量消解时，再把本地变量加入符号表，一边Enter，一边消解。
-        if (scope instanceof ClassType || enterLocalVariable) {
+        if (scope instanceof ClassType || enterLocalVariable || scope instanceof Function) {
             Variable variable = new Variable(idName, scope, ctx);
 
             //变量查重
@@ -86,19 +86,20 @@ public class TypeResolver extends ToyScriptBaseListener {
     }
 
     //设置函数的参数的类型，这些参数已经在enterVariableDeclaratorId中作为变量声明了，现在设置它们的类型
-//    @Override
-//    public void exitFormalParameter(FormalParameterContext ctx) {
-//        // 设置参数类型
-//        Type type = at.typeOfNode.get(ctx.typeType());
-//        Variable variable = (Variable) at.symbolOfNode.get(ctx.variableDeclaratorId());
-//        variable.type = (Type) type;
-//
-//        // 添加到函数的参数列表里
-//        Scope scope = at.enclosingScopeOfNode(ctx);
-//        if (scope instanceof Function) {
-//            ((Function) scope).parameters.add(variable);
-//        }
-//    }
+    @Override
+    public void exitFormalParameter(FormalParameterContext ctx) {
+        String name = ctx.variableDeclaratorId().IDENTIFIER().getText();
+        // 设置参数类型
+        Type type = at.typeOfNode.get(ctx.typeType());
+        Variable variable = (Variable) at.symbolOfNode.get(ctx.variableDeclaratorId());
+        variable.type = (Type) type;
+
+        // 添加到函数的参数列表里
+        Scope scope = at.enclosingScopeOfNode(ctx);
+        if (scope instanceof Function) {
+            ((Function) scope).parameters.add(variable);
+        }
+    }
 
     @Override
     public void exitTypeTypeOrVoid(TypeTypeOrVoidContext ctx) {
