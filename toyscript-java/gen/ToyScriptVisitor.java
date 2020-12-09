@@ -1,4 +1,4 @@
-// Generated from toy/ToyScript.g4 by ANTLR 4.8
+// Generated from /Users/troy_zhang/Toys/ToyScript/toyscript-java/src/lib/ToyScript.g4 by ANTLR 4.8
 
 package main.toy;
 
